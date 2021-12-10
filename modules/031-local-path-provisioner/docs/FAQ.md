@@ -27,3 +27,4 @@ prometheus: |
 ```
 
 Wait for the restart of Prometheus Pods.
+

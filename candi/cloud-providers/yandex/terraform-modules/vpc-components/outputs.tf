@@ -18,8 +18,8 @@ output "route_table_id" {
 
 output "zone_to_subnet_id_map" {
     value = {
-      (yandex_vpc_subnet.kube_a.zone): "e9baudtqor3frm6m5bjg"
-      (yandex_vpc_subnet.kube_b.zone): "e2lu8r1tgjmonhdpa9ro"
-      (yandex_vpc_subnet.kube_c.zone): "b0ci23brff18p4rnp44a"
+      "ru-central1-a": "e9baudtqor3frm6m5bjg"
+      "ru-central1-b": "e2lu8r1tgjmonhdpa9ro"
+      "ru-central1-c": "b0ci23brff18p4rnp44a"
     }
 }

@@ -53,6 +53,27 @@ var defaultModulesExcludes = []string{
 	".build.yaml",
 }
 
+var nothingButGoHooksExcludes = []string{
+	"images",
+	"templates",
+	"charts",
+	"crds",
+	"docs",
+	"monitoring",
+	"openapi",
+	"oss.yaml",
+	"packer",
+	"cloud-instance-manager",
+	"values_matrix_test.yaml",
+	"values.yaml",
+	".helmignore",
+	"candi",
+	"Chart.yaml",
+	".namespace",
+	"**/*_test.go",
+	"**/*.sh",
+}
+
 var stageDependencies = map[string][]string{
 	"setup": []string{
 		"**/*.go",
@@ -231,6 +252,7 @@ func executeEdition(edition string) {
 			Dir:               "modules",
 			SaveTo:            modulesWithDependencies,
 			StageDependencies: stageDependencies,
+			ExcludePaths:      nothingButGoHooksExcludes,
 		})
 		writeSections(writeSettings{
 			Edition: edition,
@@ -257,6 +279,7 @@ func executeEdition(edition string) {
 			Dir:               "modules",
 			SaveTo:            modulesWithDependencies,
 			StageDependencies: stageDependencies,
+			ExcludePaths:      nothingButGoHooksExcludes,
 		})
 		writeSections(writeSettings{
 			Edition: edition,
@@ -278,8 +301,9 @@ func executeEdition(edition string) {
 			SaveTo:  modulesWithDependencies,
 		})
 		writeSections(writeSettings{
-			Edition: edition,
-			SaveTo:  cloudProvidersFileName,
+			Edition:      edition,
+			SaveTo:       cloudProvidersFileName,
+			ExcludePaths: nothingButGoHooksExcludes,
 		})
 	default:
 		log.Fatalf("Unknown Deckhouse edition %q", edition)

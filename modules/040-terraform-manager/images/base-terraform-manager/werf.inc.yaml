@@ -13,6 +13,9 @@ git:
     setup:
     - "**/*.go"
     - Makefile
+mount:
+- from: build_dir
+  to: /go/pkg
 ansible:
   beforeInstall:
   - apk:

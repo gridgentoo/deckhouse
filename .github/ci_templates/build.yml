@@ -47,7 +47,6 @@ steps:
   #    fi
 
   {!{ tmpl.Exec "save_images_tags_json_step" . | strings.Indent 2 }!}
-  {!{ tmpl.Exec "save_images_tags_json_to_cache_step" . | strings.Indent 2 }!}
 # </template: build_modules_images_template>
 {!{ end }!}
 

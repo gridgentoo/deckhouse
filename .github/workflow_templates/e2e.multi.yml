@@ -165,7 +165,6 @@ run_{!{ $ctx.cri }!}_{!{ $ctx.kubernetesVersionSlug }!}:
 
 {!{ tmpl.Exec "checkout_from_event_ref_step" . | strings.Indent 4 }!}
 {!{ tmpl.Exec "update_comment_on_start" (printf "%s, %s, k8s %s" $ctx.workflowName $ctx.criName $ctx.kubernetesVersion) | strings.Indent 4 }!}
-{!{ tmpl.Exec "restore_images_tags_json_from_cache_or_fail" . | strings.Indent 4 }!}
 {!{ tmpl.Exec "login_dev_registry_step" . | strings.Indent 4 }!}
 {!{ tmpl.Exec "login_readonly_registry_step" . | strings.Indent 4 }!}
 {!{ tmpl.Exec "login_rw_registry_step" . | strings.Indent 4 }!}

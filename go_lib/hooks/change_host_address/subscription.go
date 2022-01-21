@@ -61,6 +61,8 @@ func wrapChangeAddressHandler(namespace string) func(input *go_hook.HookInput) e
 			patcher:   input.PatchCollector,
 		}
 
-		return changeHostAddress(client, pods)
+		changeHostAddress(client, pods)
+
+		return nil
 	}
 }

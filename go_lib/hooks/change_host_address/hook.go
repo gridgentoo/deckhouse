@@ -16,9 +16,9 @@ limitations under the License.
 
 package change_host_address
 
-func changeHostAddress(podClient podClient, podHosts []podHost) error {
+func changeHostAddress(podClient podClient, podHosts []podHost) {
 	if len(podHosts) == 0 {
-		return nil
+		return
 	}
 
 	for _, pod := range podHosts {
@@ -35,6 +35,4 @@ func changeHostAddress(podClient podClient, podHosts []podHost) error {
 			podClient.Delete(pod.Name)
 		}
 	}
-
-	return nil
 }

@@ -23,8 +23,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const initialHostAddressAnnotation = "node.deckhouse.io/initial-host-ip"
-
 func RegisterHook(appName, namespace string) bool {
 	return sdk.RegisterFunc(&go_hook.HookConfig{
 		Kubernetes: []go_hook.KubernetesConfig{
@@ -51,6 +49,8 @@ func RegisterHook(appName, namespace string) bool {
 		},
 	}, wrapChangeAddressHandler(namespace))
 }
+
+const initialHostAddressAnnotation = "node.deckhouse.io/initial-host-ip"
 
 func wrapChangeAddressHandler(namespace string) func(input *go_hook.HookInput) error {
 	return func(input *go_hook.HookInput) error {

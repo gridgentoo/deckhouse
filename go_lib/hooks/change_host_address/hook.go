@@ -16,101 +16,25 @@ limitations under the License.
 
 package change_host_address
 
-import (
-	"fmt"
-
-	"github.com/flant/addon-operator/pkg/module_manager/go_hook"
-	"github.com/flant/addon-operator/sdk"
-	"github.com/flant/shell-operator/pkg/kube_events_manager/types"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-)
-
-const initialHostAddressAnnotation = "node.deckhouse.io/initial-host-ip"
-
-type address struct {
-	Name        string
-	Host        string
-	InitialHost string
-}
-
-func getAddress(obj *unstructured.Unstructured) (go_hook.FilterResult, error) {
-	pod := &v1.Pod{}
-	err := sdk.FromUnstructured(obj, pod)
-	if err != nil {
-		return nil, fmt.Errorf("cannot convert pod: %v", err)
-	}
-
-	return address{
-		Name:        pod.Name,
-		Host:        pod.Status.HostIP,
-		InitialHost: pod.Annotations[initialHostAddressAnnotation],
-	}, nil
-}
-
-func RegisterHook(appName, namespace string) bool {
-	return sdk.RegisterFunc(&go_hook.HookConfig{
-		Kubernetes: []go_hook.KubernetesConfig{
-			{
-				Name:       "pod",
-				ApiVersion: "v1",
-				Kind:       "Pod",
-				NamespaceSelector: &types.NamespaceSelector{
-					NameSelector: &types.NameSelector{
-						MatchNames: []string{namespace},
-					},
-				},
-				LabelSelector: &metav1.LabelSelector{
-					MatchExpressions: []metav1.LabelSelectorRequirement{
-						{
-							Key:      "app",
-							Operator: "In",
-							Values:   []string{appName},
-						},
-					},
-				},
-				FilterFunc: getAddress,
-			},
-		},
-	}, wrapChangeAddressHandler(namespace))
-}
-
-func wrapChangeAddressHandler(namespace string) func(input *go_hook.HookInput) error {
-	return func(input *go_hook.HookInput) error {
-		return changeHostAddressHandler(namespace, input)
-	}
-}
-
-func changeHostAddressHandler(namespace string, input *go_hook.HookInput) error {
-	pods := input.Snapshots["pod"]
-	if len(pods) == 0 {
+func changeHostAddress(podClient podClient, podHosts []podHost) error {
+	if len(podHosts) == 0 {
 		return nil
 	}
 
-	for _, pod := range pods {
-		podAddress := pod.(address)
-
-		if podAddress.Host == "" {
-			// Pod doesn't exist, we can skip it
+	for _, pod := range podHosts {
+		if pod.IP == "" {
 			continue
 		}
 
-		if podAddress.InitialHost == "" {
-			patch := map[string]interface{}{
-				"metadata": map[string]interface{}{
-					"annotations": map[string]interface{}{
-						initialHostAddressAnnotation: podAddress.Host,
-					},
-				},
-			}
-			input.PatchCollector.MergePatch(patch, "v1", "Pod", namespace, podAddress.Name)
+		if pod.InitialIP == "" {
+			podClient.AnnotateHost(pod.Name, pod.IP)
 			continue
 		}
 
-		if podAddress.InitialHost != podAddress.Host {
-			input.PatchCollector.Delete("v1", "Pod", namespace, podAddress.Name)
+		if pod.InitialIP != pod.IP {
+			podClient.Delete(pod.Name)
 		}
 	}
+
 	return nil
 }

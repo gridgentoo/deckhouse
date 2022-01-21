@@ -100,7 +100,6 @@ func Test_changeHostAddress(t *testing.T) {
 				assert.True(t, client.deletedName.Has("badhost"))
 
 				assert.Equal(t, 2, client.annotatedName.Size())
-				assert.Equal(t, 2, client.annotatedHost.Size())
 
 				assert.True(t, client.annotatedName.Has("no-anno"))
 				assert.True(t, client.annotatedHost.Has("4.5.6.7"))

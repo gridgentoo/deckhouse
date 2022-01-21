@@ -31,10 +31,8 @@ func Test_changeHostAddress(t *testing.T) {
 		assert   func(*testing.T, *mockPodClient)
 	}{
 		{
-			name: "does nothing when no pods available",
-
+			name:     "does nothing when no pods available",
 			podHosts: []podHost{},
-
 			assert: func(t *testing.T, client *mockPodClient) {
 				assert.Equal(t, client.deletedName.Size(), 0)
 				assert.Equal(t, client.annotatedName.Size(), 0)
@@ -43,13 +41,11 @@ func Test_changeHostAddress(t *testing.T) {
 		},
 		{
 			name: "ignores pod without IP",
-
 			podHosts: []podHost{{
 				Name:      "a",
 				IP:        "",
 				InitialIP: "1.2.3.4",
 			}},
-
 			assert: func(t *testing.T, client *mockPodClient) {
 				assert.Equal(t, 0, client.deletedName.Size())
 				assert.Equal(t, 0, client.annotatedName.Size())
@@ -57,13 +53,11 @@ func Test_changeHostAddress(t *testing.T) {
 		},
 		{
 			name: "annotates Pod with IP when Pod does not have the annotation",
-
 			podHosts: []podHost{{
 				Name:      "a",
 				IP:        "1.2.3.4",
 				InitialIP: "",
 			}},
-
 			assert: func(t *testing.T, client *mockPodClient) {
 				assert.Equal(t, 0, client.deletedName.Size())
 
@@ -73,13 +67,11 @@ func Test_changeHostAddress(t *testing.T) {
 		},
 		{
 			name: "deletes Pod when IP and initial IP do not equal",
-
 			podHosts: []podHost{{
 				Name:      "a",
 				IP:        "1.2.3.4",
 				InitialIP: "4.3.2.1",
 			}},
-
 			assert: func(t *testing.T, client *mockPodClient) {
 				assert.Equal(t, 1, client.deletedName.Size())
 				assert.True(t, client.deletedName.Has("a"))
@@ -89,26 +81,20 @@ func Test_changeHostAddress(t *testing.T) {
 			},
 		},
 		{
-			name: "process multiple pods correclty",
-
+			name: "processes multiple pods correclty",
 			podHosts: []podHost{{
 				Name:      "no-anno",
 				IP:        "4.5.6.7",
-				InitialIP: "",
 			}, {
 				Name:      "badhost",
 				IP:        "2.3.4.5",
 				InitialIP: "4.3.2.1",
 			}, {
 				Name:      "skipped",
-				IP:        "",
-				InitialIP: "",
 			}, {
 				Name:      "no-anno-2",
 				IP:        "4.5.6.8",
-				InitialIP: "",
 			}},
-
 			assert: func(t *testing.T, client *mockPodClient) {
 				assert.Equal(t, 1, client.deletedName.Size())
 				assert.True(t, client.deletedName.Has("badhost"))

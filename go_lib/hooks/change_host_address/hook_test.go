@@ -27,12 +27,12 @@ func Test_changeHostAddress(t *testing.T) {
 
 	tests := []struct {
 		name     string
-		podHosts []podHost
+		podHosts []podAddr
 		assert   func(*testing.T, *mockPodClient)
 	}{
 		{
 			name:     "does nothing when no pods available",
-			podHosts: []podHost{},
+			podHosts: []podAddr{},
 			assert: func(t *testing.T, client *mockPodClient) {
 				assert.Equal(t, client.deletedName.Size(), 0)
 				assert.Equal(t, client.annotatedName.Size(), 0)
@@ -41,7 +41,7 @@ func Test_changeHostAddress(t *testing.T) {
 		},
 		{
 			name: "ignores pod without IP",
-			podHosts: []podHost{{
+			podHosts: []podAddr{{
 				Name:      "a",
 				IP:        "",
 				InitialIP: "1.2.3.4",
@@ -53,7 +53,7 @@ func Test_changeHostAddress(t *testing.T) {
 		},
 		{
 			name: "annotates Pod with IP when Pod does not have the annotation",
-			podHosts: []podHost{{
+			podHosts: []podAddr{{
 				Name:      "a",
 				IP:        "1.2.3.4",
 				InitialIP: "",
@@ -67,7 +67,7 @@ func Test_changeHostAddress(t *testing.T) {
 		},
 		{
 			name: "deletes Pod when IP and initial IP do not equal",
-			podHosts: []podHost{{
+			podHosts: []podAddr{{
 				Name:      "a",
 				IP:        "1.2.3.4",
 				InitialIP: "4.3.2.1",
@@ -82,22 +82,23 @@ func Test_changeHostAddress(t *testing.T) {
 		},
 		{
 			name: "processes multiple pods correclty",
-			podHosts: []podHost{{
-				Name:      "no-anno",
-				IP:        "4.5.6.7",
+			podHosts: []podAddr{{
+				Name: "no-anno",
+				IP:   "4.5.6.7",
 			}, {
-				Name:      "badhost",
+				Name:      "bad-addr",
 				IP:        "2.3.4.5",
 				InitialIP: "4.3.2.1",
 			}, {
 				Name:      "skipped",
+				InitialIP: "14.13.12.11",
 			}, {
-				Name:      "no-anno-2",
-				IP:        "4.5.6.8",
+				Name: "no-anno-2",
+				IP:   "4.5.6.8",
 			}},
 			assert: func(t *testing.T, client *mockPodClient) {
 				assert.Equal(t, 1, client.deletedName.Size())
-				assert.True(t, client.deletedName.Has("badhost"))
+				assert.True(t, client.deletedName.Has("bad-addr"))
 
 				assert.Equal(t, 2, client.annotatedName.Size())
 

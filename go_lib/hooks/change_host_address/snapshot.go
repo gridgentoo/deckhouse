@@ -18,13 +18,14 @@ package change_host_address
 
 import (
 	"fmt"
+
 	"github.com/flant/addon-operator/pkg/module_manager/go_hook"
 	"github.com/flant/addon-operator/sdk"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
-type podHost struct {
+type podAddr struct {
 	Name      string
 	IP        string
 	InitialIP string
@@ -37,17 +38,17 @@ func getAddress(obj *unstructured.Unstructured) (go_hook.FilterResult, error) {
 		return nil, fmt.Errorf("cannot convert pod: %v", err)
 	}
 
-	return podHost{
+	return podAddr{
 		Name:      pod.Name,
 		IP:        pod.Status.HostIP,
 		InitialIP: pod.Annotations[initialHostAddressAnnotation],
 	}, nil
 }
 
-func parsePods(snaps []go_hook.FilterResult) []podHost {
-	ps := make([]podHost, len(snaps))
+func parsePods(snaps []go_hook.FilterResult) []podAddr {
+	ps := make([]podAddr, len(snaps))
 	for i, s := range snaps {
-		ps[i] = s.(podHost)
+		ps[i] = s.(podAddr)
 	}
 	return ps
 }

@@ -28,35 +28,24 @@ import (
 )
 
 func Test_getAddress(t *testing.T) {
-
-	unstructuredPod := genPod(podArgs{
-		Name:      "podname",
-		IP:        "1.2.3.4",
-		InitialIP: "4.3.2.1",
-	})
-
-	expected := podHost{
+	expected := podAddr{
 		Name:      "podname",
 		IP:        "1.2.3.4",
 		InitialIP: "4.3.2.1",
 	}
 
-	got, err := getAddress(unstructuredPod)
+	unstructuredPod := genPod(expected)
+
+	parsed, err := getAddress(unstructuredPod)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	assert.Equalf(t, expected, got.(podHost), "getAddress(%v)", unstructuredPod)
+	assert.Equalf(t, expected, parsed.(podAddr), "getAddress(%v)", unstructuredPod)
 
 }
 
-type podArgs struct {
-	Name      string
-	IP        string
-	InitialIP string
-}
-
-func genPod(args podArgs) *unstructured.Unstructured {
+func genPod(args podAddr) *unstructured.Unstructured {
 	pod := &v1.Pod{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Node",

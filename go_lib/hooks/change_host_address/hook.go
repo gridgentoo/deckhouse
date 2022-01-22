@@ -16,12 +16,8 @@ limitations under the License.
 
 package change_host_address
 
-func changeHostAddress(podClient podClient, podHosts []podHost) {
-	if len(podHosts) == 0 {
-		return
-	}
-
-	for _, pod := range podHosts {
+func changeHostAddress(podClient podClient, pods []podAddr) {
+	for _, pod := range pods {
 		if pod.IP == "" {
 			continue
 		}

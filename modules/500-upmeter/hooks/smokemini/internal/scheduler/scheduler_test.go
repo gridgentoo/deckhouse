@@ -40,10 +40,10 @@ func Test_scheduler_cleaning(t *testing.T) {
 	pods := fakePods(5)
 
 	type fields struct {
-		indexSelector IndexSelector
-		nodeFilter    NodeFilter
-		image         string
-		storageClass  string
+		stsSelector  StatefulSetSelector
+		nodeFilter   NodeFilter
+		image        string
+		storageClass string
 
 		pods []snapshot.Pod
 	}
@@ -60,11 +60,11 @@ func Test_scheduler_cleaning(t *testing.T) {
 		{
 			name: "deletes nothing, if nothing changes and pod is ok",
 			fields: fields{
-				indexSelector: &fakeIndexSelector{"b"},
-				nodeFilter:    &noopNodeFilter{},
-				pods:          pods,
-				image:         image,
-				storageClass:  storageClass,
+				stsSelector:  &fakeStsSelector{"b"},
+				nodeFilter:   &noopNodeFilter{},
+				pods:         pods,
+				image:        image,
+				storageClass: storageClass,
 			},
 			args: args{
 				state: fakeStateInSingleZone(zone),
@@ -75,11 +75,11 @@ func Test_scheduler_cleaning(t *testing.T) {
 		{
 			name: "deletes pvc and sts if storage class changed",
 			fields: fields{
-				indexSelector: &fakeIndexSelector{"a"},
-				nodeFilter:    &noopNodeFilter{},
-				pods:          pods,
-				image:         image,
-				storageClass:  storageClass + "_new", // changed
+				stsSelector:  &fakeStsSelector{"a"},
+				nodeFilter:   &noopNodeFilter{},
+				pods:         pods,
+				image:        image,
+				storageClass: storageClass + "_new", // changed
 			},
 			args: args{
 				state: fakeStateInSingleZone(zone),
@@ -90,7 +90,7 @@ func Test_scheduler_cleaning(t *testing.T) {
 		{
 			name: "deletes pvc and sts if zone changed",
 			fields: fields{
-				indexSelector: &fakeIndexSelector{"c"},
+				stsSelector: &fakeStsSelector{"c"},
 				nodeFilter: &mockNodeFilter{nodes: []snapshot.Node{
 					fakeNode(3, "ZZZONE"),
 				}},
@@ -111,8 +111,8 @@ func Test_scheduler_cleaning(t *testing.T) {
 		{
 			name: "deletes pvc and sts if it the pod is not running",
 			fields: fields{
-				indexSelector: &fakeIndexSelector{"e"},
-				nodeFilter:    &noopNodeFilter{},
+				stsSelector: &fakeStsSelector{"e"},
+				nodeFilter:  &noopNodeFilter{},
 				pods: append(fakePods(4), snapshot.Pod{
 					Index:   "e",
 					Node:    named("node", 5),
@@ -131,8 +131,8 @@ func Test_scheduler_cleaning(t *testing.T) {
 		{
 			name: `does not delete pvc if smoke-mini storage class is "false"`,
 			fields: fields{
-				indexSelector: &fakeIndexSelector{"e"},
-				nodeFilter:    &noopNodeFilter{},
+				stsSelector: &fakeStsSelector{"e"},
+				nodeFilter:  &noopNodeFilter{},
 				pods: append(fakePods(4), snapshot.Pod{
 					Index:   "e",
 					Node:    named("node", 5),
@@ -157,11 +157,11 @@ func Test_scheduler_cleaning(t *testing.T) {
 				statefulSetDeleter:            &fakeDeleter{},
 			}
 			s := &Scheduler{
-				indexSelector: tt.fields.indexSelector,
-				nodeFilter:    tt.fields.nodeFilter,
-				cleaner:       kleaner,
-				image:         tt.fields.image,
-				storageClass:  tt.fields.storageClass,
+				stsSelector:  tt.fields.stsSelector,
+				nodeFilter:   tt.fields.nodeFilter,
+				cleaner:      kleaner,
+				image:        tt.fields.image,
+				storageClass: tt.fields.storageClass,
 			}
 			_, _, _ = s.Schedule(tt.args.state, tt.args.nodes)
 			tt.asserter.Assert(t, kleaner)
@@ -205,11 +205,11 @@ func (d *fakeDeleter) Delete(name string) {
 	d.names.Add(name)
 }
 
-type fakeIndexSelector struct {
+type fakeStsSelector struct {
 	index string
 }
 
-func (s *fakeIndexSelector) Select(_ State) (string, error) {
+func (s *fakeStsSelector) Select(_ State) (string, error) {
 	return s.index, nil
 }
 

@@ -31,7 +31,7 @@ var (
 	errNext = fmt.Errorf("next step")
 )
 
-// NewStatefulSetSelector creates statefulset choosing pipeline. The result returns ffrom the first
+// NewStatefulSetSelector creates statefulset choosing pipeline. The result returns from the first
 // successful selection. If no selection occurs, the pipeline returns ErrSkip.
 func NewStatefulSetSelector(
 	nodes []snapshot.Node,
@@ -39,8 +39,8 @@ func NewStatefulSetSelector(
 	pvcs []snapshot.PvcTermination,
 	pods []snapshot.Pod,
 	disruptionAllowed bool,
-) IndexSelectorPipe {
-	xSel := IndexSelectorPipe{
+) StatefulSetSelectorPipe {
+	xSel := StatefulSetSelectorPipe{
 		&selectByPVC{pvcs: pvcs},
 		&selectByNode{nodes: nodes},
 		&selectByStorageClass{storageClass: storageClass},
@@ -49,15 +49,15 @@ func NewStatefulSetSelector(
 	return xSel
 }
 
-type IndexSelector interface {
+type StatefulSetSelector interface {
 	Select(State) (string, error)
 }
 
-// IndexSelectorPipe is the sequential wrapper for other sts selectors. The result is returned from the
+// StatefulSetSelectorPipe is the sequential wrapper for other sts selectors. The result is returned from the
 // first successful selection or abortion error. Selection is ignored on next error.
-type IndexSelectorPipe []IndexSelector
+type StatefulSetSelectorPipe []StatefulSetSelector
 
-func (s IndexSelectorPipe) Select(state State) (string, error) {
+func (s StatefulSetSelectorPipe) Select(state State) (string, error) {
 	for _, s := range s {
 		x, err := s.Select(state)
 		if errors.Is(err, errNext) {

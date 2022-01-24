@@ -22,11 +22,11 @@ import (
 	"github.com/deckhouse/deckhouse/modules/500-upmeter/hooks/smokemini/internal/snapshot"
 )
 
-func New(indexSelector IndexSelector, nodeFilter NodeFilter, cleaner Cleaner, image, storageClass string) *Scheduler {
+func New(stsSelector StatefulSetSelector, nodeFilter NodeFilter, cleaner Cleaner, image, storageClass string) *Scheduler {
 	return &Scheduler{
-		indexSelector: indexSelector,
-		nodeFilter:    nodeFilter,
-		cleaner:       cleaner,
+		stsSelector: stsSelector,
+		nodeFilter:  nodeFilter,
+		cleaner:     cleaner,
 
 		image:        image,
 		storageClass: storageClass,
@@ -34,16 +34,16 @@ func New(indexSelector IndexSelector, nodeFilter NodeFilter, cleaner Cleaner, im
 }
 
 type Scheduler struct {
-	indexSelector IndexSelector
-	nodeFilter    NodeFilter
-	cleaner       Cleaner
-	image         string
-	storageClass  string
+	stsSelector  StatefulSetSelector
+	nodeFilter   NodeFilter
+	cleaner      Cleaner
+	image        string
+	storageClass string
 }
 
 func (s *Scheduler) Schedule(state State, nodes []snapshot.Node) (string, *XState, error) {
 	// Select sts
-	x, err := s.indexSelector.Select(state)
+	x, err := s.stsSelector.Select(state)
 	if err != nil {
 		return "", nil, fmt.Errorf("%w: no smoke-mini StatefulSet chosen", err)
 	}

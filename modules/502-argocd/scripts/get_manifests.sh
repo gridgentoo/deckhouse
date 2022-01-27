@@ -14,6 +14,7 @@
 
 ARGOCD_REPO="${HOME}/dev/flant/argoproj/argo-cd"
 MANIFESTS="${ARGOCD_REPO}/manifests/ha/install.yaml"
+MANIFESTS="${ARGOCD_REPO}/manifests/install.yaml"
 
 yq eval-all 'select(.kind == "CustomResourceDefinition") | .' $MANIFESTS |
         yq e --no-doc -s '"crd-" + .spec.names.singular' -

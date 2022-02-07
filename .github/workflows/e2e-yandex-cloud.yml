@@ -469,7 +469,6 @@ jobs:
         with:
           name: test_output_yandex-cloud_docker_1_19
           path: |
-            modules/images_tags_${{env.WERF_ENV}}.json
             testing/cloud_layouts/
 
       - name: Cleanup temp directory
@@ -808,7 +807,6 @@ jobs:
         with:
           name: test_output_yandex-cloud_docker_1_20
           path: |
-            modules/images_tags_${{env.WERF_ENV}}.json
             testing/cloud_layouts/
 
       - name: Cleanup temp directory
@@ -1147,7 +1145,6 @@ jobs:
         with:
           name: test_output_yandex-cloud_docker_1_21
           path: |
-            modules/images_tags_${{env.WERF_ENV}}.json
             testing/cloud_layouts/
 
       - name: Cleanup temp directory
@@ -1486,7 +1483,6 @@ jobs:
         with:
           name: test_output_yandex-cloud_docker_1_22
           path: |
-            modules/images_tags_${{env.WERF_ENV}}.json
             testing/cloud_layouts/
 
       - name: Cleanup temp directory
@@ -1825,7 +1821,6 @@ jobs:
         with:
           name: test_output_yandex-cloud_containerd_1_19
           path: |
-            modules/images_tags_${{env.WERF_ENV}}.json
             testing/cloud_layouts/
 
       - name: Cleanup temp directory
@@ -2164,7 +2159,6 @@ jobs:
         with:
           name: test_output_yandex-cloud_containerd_1_20
           path: |
-            modules/images_tags_${{env.WERF_ENV}}.json
             testing/cloud_layouts/
 
       - name: Cleanup temp directory
@@ -2503,7 +2497,6 @@ jobs:
         with:
           name: test_output_yandex-cloud_containerd_1_21
           path: |
-            modules/images_tags_${{env.WERF_ENV}}.json
             testing/cloud_layouts/
 
       - name: Cleanup temp directory
@@ -2842,7 +2835,6 @@ jobs:
         with:
           name: test_output_yandex-cloud_containerd_1_22
           path: |
-            modules/images_tags_${{env.WERF_ENV}}.json
             testing/cloud_layouts/
 
       - name: Cleanup temp directory

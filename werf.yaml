@@ -14,6 +14,7 @@ cleanup:
 gitWorktree:
   forceShallowClone: true
 ---
+
 {{- define "base components" }}
 {{- $CandiVersionMap := .Files.Get "candi/version_map.yml" | fromYaml }}
   - name: "Install jo"
@@ -180,7 +181,7 @@ docker:
   ENV:
     PATH: /usr/local/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/go/bin
 ---
-image: dev
+image: dev-prebuild
 fromImage: common-base
 fromCacheVersion: 2020-05-08.1
 git:
@@ -205,7 +206,6 @@ git:
   - modules/*/.namespace
   - modules/*/values_matrix_test.yaml
   - global-hooks/**/*.go
-  - modules/images_tags_*.json
   - ee
 - url: https://github.com/flant/shell-operator
   tag: v1.0.1
@@ -227,12 +227,6 @@ mount:
   to: /go/pkg
 ansible:
   setup:
-  - name: "Add modules images tags.json"
-    copy:
-      content: |
-        {{- .Files.Get (printf "modules/images_tags_%s.json" .Env) | nindent 8 }}
-      dest: /deckhouse/modules/images_tags.json
-
 {{- range $key := list "default" "managed" "minimal" }}
   - name: "Add bundle {{ $key }}"
     copy:
@@ -278,7 +272,7 @@ docker:
     GLOBAL_HOOKS_DIR: /deckhouse/global-hooks
 
 ---
-image: tests
+image: tests-prebuild
 fromImage: base-for-go
 fromCacheVersion: "20210413"
 git:
@@ -290,7 +284,6 @@ git:
       - go.sum
   excludePaths:
   - docs
-  - modules/images_tags_*.json
   - modules/*/images
   - ee
 - url: https://github.com/flant/shell-operator
@@ -346,12 +339,6 @@ ansible:
       curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh \
         | sh -s -- -b $(go env GOPATH)/bin v1.32.2
 
-  setup:
-  - name: "Add modules images tags.json"
-    copy:
-      content: |
-        {{- .Files.Get (printf "modules/images_tags_%s.json" .Env) | nindent 8 }}
-      dest: /deckhouse/modules/images_tags.json
 docker:
   ENV:
     ADDON_OPERATOR_NAMESPACE: tests
@@ -625,8 +612,8 @@ import:
   add: /terraform-provider-gcp/terraform-provider-gcp
   to: /usr/local/share/terraform/plugins/registry.terraform.io/{{ env "TF_GCP_NAMESPACE" }}/{{ env "TF_GCP_TYPE" }}/{{ env "TF_GCP_VERSION" }}/linux_amd64/terraform-provider-google
   after: setup
-- image: dev
-  add: /deckhouse/modules/images_tags.json
+- artifact: images-tags
+  add: /images_tags.json
   to: /deckhouse/candi/images_tags.json
   after: setup
 docker:
@@ -758,3 +745,115 @@ shell:
     requirements='{{ .Files.Get "requirements.json" | fromJson | toJson }}'
     json="{\"version\": \"${version}\", \"canary\": ${canary}, \"requirements\": ${requirements}}"
     echo "$json" > /version.json
+
+{{- define "module_image_template" }}
+{{- if  eq .ImageInstructionType "Dockerfile" }}
+image: {{ .ModuleName }}/{{ .ImageName }}
+context: {{ .ModulePath }}modules/{{ .ModulePriority }}-{{ .ModuleName }}/images/{{ .ImageName }}
+dockerfile: Dockerfile
+args:
+  BASE_ALPINE: {{ env "BASE_ALPINE" }}
+  BASE_ALPINE_3_15: {{ env "BASE_ALPINE_3_15" }}
+  BASE_DEBIAN: {{ env "BASE_DEBIAN" }}
+  BASE_GOLANG_ALPINE: {{ env "BASE_GOLANG_ALPINE" }}
+  BASE_GOLANG_16_ALPINE: {{ env "BASE_GOLANG_16_ALPINE" }}
+  BASE_GOLANG_17_ALPINE: {{ env "BASE_GOLANG_17_ALPINE" }}
+  BASE_GOLANG_BUSTER: {{ env "BASE_GOLANG_BUSTER" }}
+  BASE_GOLANG_16_BUSTER: {{ env "BASE_GOLANG_16_BUSTER" }}
+  BASE_GOLANG_17_BUSTER: {{ env "BASE_GOLANG_17_BUSTER" }}
+  BASE_NGINX_ALPINE:  {{ env "BASE_NGINX_ALPINE" }}
+  BASE_NODE_16_ALPINE: {{ env "BASE_NODE_16_ALPINE" }}
+  BASE_PYTHON_ALPINE:  {{ env "BASE_PYTHON_ALPINE" }}
+  BASE_SHELL_OPERATOR: {{ env "BASE_SHELL_OPERATOR" }}
+  BASE_UBUNTU: {{ env "BASE_UBUNTU" }}
+  BASE_JEKYLL: {{ env "BASE_JEKYLL" }}
+{{- else }}
+{{ tpl .ImageBuildData . }}
+{{- end }}
+{{- end }}
+
+{{- $Root := . }}
+{{- $CandiVersionMap := .Files.Get "candi/version_map.yml" | fromYaml }}
+
+# Collect EE and FE images if desired
+{{ $modules_images_build_files := .Files.Glob "modules/*/images/*/{Dockerfile,werf.inc.yaml}" }}
+{{- if eq .Env "EE" }}
+  {{ $modules_images_build_files = merge $modules_images_build_files (.Files.Glob "ee/modules/*/images/*/{Dockerfile,werf.inc.yaml}") }}
+{{- end }}
+{{- if eq .Env "FE" }}
+  {{ $modules_images_build_files = merge $modules_images_build_files (.Files.Glob "ee/modules/*/images/*/{Dockerfile,werf.inc.yaml}") }}
+  {{ $modules_images_build_files = merge $modules_images_build_files (.Files.Glob "ee/fe/modules/*/images/*/{Dockerfile,werf.inc.yaml}") }}
+{{- end }}
+
+{{- range $path, $content := $modules_images_build_files  }}
+  {{- $ctx := dict }}
+  {{- if regexMatch "/werf.inc.yaml$" $path }}
+  {{- $_ := set $ctx "ImageInstructionType" "Stapel" }}
+  {{- else }}
+  {{- $_ := set $ctx "ImageInstructionType" "Dockerfile" }}
+  {{- end }}
+  {{- $ImageData := regexReplaceAll "^(.*)modules/([0-9]+)-([a-z-]+)/images/([0-9a-z-_]+)/(Dockerfile|werf.inc.yaml)$" $path "${1}#${2}#${3}#${4}" | split "#" }}
+  {{- $_ := set $ctx "CandiVersionMap" $CandiVersionMap }}
+  {{- $_ := set $ctx "ModulePath" $ImageData._0 }}
+  {{- $_ := set $ctx "ModulePriority" $ImageData._1 }}
+  {{- $_ := set $ctx "ModuleName" $ImageData._2 }}
+  {{- $_ := set $ctx "ImageName" $ImageData._3 }}
+  {{- $_ := set $ctx "ImageBuildData" $content }}
+  {{- $_ := set $ctx "Files" $Root.Files }}
+  {{- $_ := set $ctx "Env" $Root.Env }}
+---
+{{ include "module_image_template" $ctx  }}
+{{- end }}
+
+---
+artifact: images-tags
+from: {{ env "BASE_ALPINE" }}
+dependencies:
+{{- range $path, _ := $modules_images_build_files  }}
+  {{- $ImageData := regexReplaceAll "^(.*)modules/([0-9]+)-([a-z-]+)/images/([0-9a-z-_]+)/(Dockerfile|werf.inc.yaml)$" $path "${1}#${2}#${3}#${4}" | split "#" }}
+  {{- $ModuleName := $ImageData._2 }}
+  {{- $ImageName := $ImageData._3 }}
+  {{- $ModuleNameCamel := $ModuleName | camelcase | untitle }}
+  {{- $ImageNameCamel := $ImageName | camelcase | untitle }}
+  - image: {{ $ModuleName }}/{{ $ImageName }}
+    imports:
+      type: ImageTag
+      targetEnv: MODULES_IMAGES_TAGS_{{ $ModuleNameCamel }}_{{ $ImageNameCamel }}
+{{- end }}
+import:
+- artifact: jq
+  add: /usr/bin/jq
+  to: /usr/bin/jq
+  after: setup
+shell:
+  install:
+  - |
+    env | grep MODULES_IMAGES_TAGS | jq -Rn '
+      reduce inputs as $i (
+        {};
+        . * (
+          $i | ltrimstr("MODULES_IMAGES_TAGS_") | sub("=";"_") |
+          split("_")[0] as $moduleName |
+          split("_")[1] as $imageName |
+          split("_")[2] as $tag |
+          {($moduleName): {($imageName): $tag}}
+        )
+      )
+    ' > /images_tags.json
+
+---
+image: dev
+from: dev-prebuild
+import:
+- artifact: images-tags
+  add: /images_tags.json
+  to: /deckhouse/modules/images_tags.json
+  after: setup
+---
+image: tests
+from: tests-prebuild
+import:
+- artifact: images-tags
+  add: /images_tags.json
+  to: /deckhouse/modules/images_tags.json
+  after: setup

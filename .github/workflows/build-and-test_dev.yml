@@ -268,92 +268,6 @@ jobs:
 
   # </template: git_info_job>
 
-  build_modules_images_fe:
-    name: Build Modules Images FE
-    needs:
-      - git_info
-      - pull_request_info
-
-    # <template: build_modules_images_template>
-    runs-on: [self-hosted, regular]
-    steps:
-
-      # <template: checkout_full_step>
-      - name: Checkout sources
-        uses: actions/checkout@v2.4.0
-        with:
-          fetch-depth: 0
-          ref: ${{ needs.pull_request_info.outputs.ref }}
-      # </template: checkout_full_step>
-
-      # <template: login_dev_registry_step>
-      - name: Login to dev registry
-        uses: docker/login-action@v1.10.0
-        with:
-          registry: ${{ secrets.DECKHOUSE_DEV_REGISTRY_HOST }}
-          username: ${{ secrets.DECKHOUSE_DEV_REGISTRY_USER }}
-          password: ${{ secrets.DECKHOUSE_DEV_REGISTRY_PASSWORD }}
-          logout: false
-      # </template: login_dev_registry_step>
-
-      # <template: login_readonly_registry_step>
-      - name: Login to readonly registry
-        uses: docker/login-action@v1.10.0
-        with:
-          registry: ${{ secrets.DECKHOUSE_REGISTRY_READ_HOST }}
-          username: ${{ secrets.DECKHOUSE_REGISTRY_READ_USER }}
-          password: ${{ secrets.DECKHOUSE_REGISTRY_READ_PASSWORD }}
-          logout: false
-      # </template: login_readonly_registry_step>
-
-      # <template: login_rw_registry_step>
-      - name: Login to rw registry
-        uses: docker/login-action@v1.10.0
-        with:
-          registry: ${{ secrets.DECKHOUSE_REGISTRY_HOST }}
-          username: ${{ secrets.DECKHOUSE_REGISTRY_USER }}
-          password: ${{ secrets.DECKHOUSE_REGISTRY_PASSWORD }}
-          logout: false
-      # </template: login_rw_registry_step>
-
-      # <template: werf_install_step>
-      - name: Install werf CLI
-        uses: werf/actions/install@v1.2
-        with:
-          channel: ${{env.WERF_CHANNEL}}
-      # </template: werf_install_step>
-
-      - name: Build and push modules images
-        env:
-          CI_COMMIT_TAG: ${{needs.git_info.outputs.ci_commit_tag}}
-          DECKHOUSE_REGISTRY_HOST: ${{secrets.DECKHOUSE_REGISTRY_HOST}}
-          REPO_MCM_USER: ${{secrets.REPO_MCM_USER}}
-          REPO_MCM_TOKEN: ${{secrets.REPO_MCM_TOKEN}}
-        run: |
-          #export WERF_REPO="${DEV_REGISTRY_PATH}"
-          #type werf && source $(werf ci-env github --verbose --as-file)
-
-          ./modules_images_werf bp
-
-      #- name: Build and push modules images
-      #  if: always()
-      #  run: |
-      #    if [[ $WERF_DOCKER_CONFIG == $(pwd)/* ]] ; then
-      #      echo Cleanup temp docker config directory $WERF_DOCKER_CONFIG
-      #      rm -rf $WERF_DOCKER_CONFIG
-      #    fi
-
-
-      # <template: save_images_tags_json_step>
-      - name: Save images_tags file
-        uses: actions/upload-artifact@v2
-        with:
-          name: images_tags_json_${{env.WERF_ENV}}
-          path: modules/images_tags_${{env.WERF_ENV}}.json
-      # </template: save_images_tags_json_step>
-    # </template: build_modules_images_template>
-
-
   go_generate:
     name: Go Generate
     needs:
@@ -397,7 +311,6 @@ jobs:
     needs:
       - git_info
       - pull_request_info
-      - build_modules_images_fe
       - go_generate
     # <template: build_template>
     runs-on: [self-hosted, regular]
@@ -457,14 +370,6 @@ jobs:
         with:
           channel: ${{env.WERF_CHANNEL}}
       # </template: werf_install_step>
-
-      # <template: restore_images_tags_json_step>
-      - name: Restore images_tags file
-        uses: actions/download-artifact@v2
-        with:
-          name: images_tags_json_${{env.WERF_ENV}}
-          path: modules
-      # </template: restore_images_tags_json_step>
 
       - name: Build and push deckhouse images
         env:
@@ -535,7 +440,6 @@ jobs:
     needs:
       - git_info
       - pull_request_info
-      - build_modules_images_fe
     # <template: doc_web_build_template>
     runs-on: [self-hosted, regular]
     steps:
@@ -584,7 +488,6 @@ jobs:
     needs:
       - git_info
       - pull_request_info
-      - build_modules_images_fe
     # <template: main_web_build_template>
     runs-on: [self-hosted, regular]
     steps:
@@ -632,7 +535,6 @@ jobs:
     needs:
       - git_info
       - pull_request_info
-      - build_modules_images_fe
       - build_fe
 
     # <template: tests_template>
@@ -666,14 +568,6 @@ jobs:
           password: ${{ secrets.DECKHOUSE_REGISTRY_READ_PASSWORD }}
           logout: false
       # </template: login_readonly_registry_step>
-
-      # <template: restore_images_tags_json_step>
-      - name: Restore images_tags file
-        uses: actions/download-artifact@v2
-        with:
-          name: images_tags_json_${{env.WERF_ENV}}
-          path: modules
-      # </template: restore_images_tags_json_step>
       - name: Run tests
         uses: werf/actions/run@v1.2
         with:
@@ -694,7 +588,6 @@ jobs:
     needs:
       - git_info
       - pull_request_info
-      - build_modules_images_fe
       - build_fe
 
     # <template: tests_template>
@@ -728,14 +621,6 @@ jobs:
           password: ${{ secrets.DECKHOUSE_REGISTRY_READ_PASSWORD }}
           logout: false
       # </template: login_readonly_registry_step>
-
-      # <template: restore_images_tags_json_step>
-      - name: Restore images_tags file
-        uses: actions/download-artifact@v2
-        with:
-          name: images_tags_json_${{env.WERF_ENV}}
-          path: modules
-      # </template: restore_images_tags_json_step>
       - name: Run tests
         uses: werf/actions/run@v1.2
         with:
@@ -756,7 +641,6 @@ jobs:
     needs:
       - git_info
       - pull_request_info
-      - build_modules_images_fe
       - build_fe
 
     # <template: tests_template>
@@ -790,14 +674,6 @@ jobs:
           password: ${{ secrets.DECKHOUSE_REGISTRY_READ_PASSWORD }}
           logout: false
       # </template: login_readonly_registry_step>
-
-      # <template: restore_images_tags_json_step>
-      - name: Restore images_tags file
-        uses: actions/download-artifact@v2
-        with:
-          name: images_tags_json_${{env.WERF_ENV}}
-          path: modules
-      # </template: restore_images_tags_json_step>
       - name: Run tests
         uses: werf/actions/run@v1.2
         with:
@@ -818,7 +694,6 @@ jobs:
     needs:
       - git_info
       - pull_request_info
-      - build_modules_images_fe
       - build_fe
 
     # <template: tests_template>
@@ -852,14 +727,6 @@ jobs:
           password: ${{ secrets.DECKHOUSE_REGISTRY_READ_PASSWORD }}
           logout: false
       # </template: login_readonly_registry_step>
-
-      # <template: restore_images_tags_json_step>
-      - name: Restore images_tags file
-        uses: actions/download-artifact@v2
-        with:
-          name: images_tags_json_${{env.WERF_ENV}}
-          path: modules
-      # </template: restore_images_tags_json_step>
       - name: Run tests
         uses: werf/actions/run@v1.2
         with:
@@ -880,7 +747,6 @@ jobs:
     needs:
       - git_info
       - pull_request_info
-      - build_modules_images_fe
       - build_fe
 
     # <template: tests_template>
@@ -914,14 +780,6 @@ jobs:
           password: ${{ secrets.DECKHOUSE_REGISTRY_READ_PASSWORD }}
           logout: false
       # </template: login_readonly_registry_step>
-
-      # <template: restore_images_tags_json_step>
-      - name: Restore images_tags file
-        uses: actions/download-artifact@v2
-        with:
-          name: images_tags_json_${{env.WERF_ENV}}
-          path: modules
-      # </template: restore_images_tags_json_step>
       - name: Run tests
         uses: werf/actions/run@v1.2
         with:
@@ -1057,7 +915,6 @@ jobs:
     needs:
       - git_info
       - pull_request_info
-      - build_modules_images_fe
       - build_fe
 
     # <template: tests_template>
@@ -1091,14 +948,6 @@ jobs:
           password: ${{ secrets.DECKHOUSE_REGISTRY_READ_PASSWORD }}
           logout: false
       # </template: login_readonly_registry_step>
-
-      # <template: restore_images_tags_json_step>
-      - name: Restore images_tags file
-        uses: actions/download-artifact@v2
-        with:
-          name: images_tags_json_${{env.WERF_ENV}}
-          path: modules
-      # </template: restore_images_tags_json_step>
       - name: Run tests
         uses: werf/actions/run@v1.2
         with:

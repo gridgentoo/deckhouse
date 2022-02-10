@@ -6,7 +6,7 @@ name: Build and test for dev branches
 on:
   push:
     branches:
-      - 'build-optimization'
+      - 'build-optimization*'
   pull_request_target:
      types:
       - opened

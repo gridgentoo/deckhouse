@@ -817,7 +817,7 @@ dependencies:
   {{- $ImageNameCamel := $ImageName | camelcase | untitle }}
   - image: {{ $ModuleName }}/{{ $ImageName }}
     imports:
-      type: ImageTag
+    - type: ImageTag
       targetEnv: MODULES_IMAGES_TAGS_{{ $ModuleNameCamel }}_{{ $ImageNameCamel }}
 {{- end }}
 import:

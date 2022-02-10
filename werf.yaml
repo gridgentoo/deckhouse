@@ -816,6 +816,7 @@ dependencies:
   {{- $ModuleNameCamel := $ModuleName | camelcase | untitle }}
   {{- $ImageNameCamel := $ImageName | camelcase | untitle }}
   - image: {{ $ModuleName }}/{{ $ImageName }}
+    before: setup
     imports:
     - type: ImageTag
       targetEnv: MODULES_IMAGES_TAGS_{{ $ModuleNameCamel }}_{{ $ImageNameCamel }}
@@ -824,9 +825,9 @@ import:
 - artifact: jq
   add: /usr/bin/jq
   to: /usr/bin/jq
-  after: setup
+  before: setup
 shell:
-  install:
+  setup:
   - |
     env | grep MODULES_IMAGES_TAGS | jq -Rn '
       reduce inputs as $i (

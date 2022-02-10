@@ -809,7 +809,7 @@ args:
 artifact: images-tags
 from: {{ env "BASE_ALPINE" }}
 dependencies:
-{{- range $path := $modules_images_build_files  }}
+{{- range $path, $content := $modules_images_build_files  }}
   {{- $ImageData := regexReplaceAll "^(.*)modules/([0-9]+)-([a-z-]+)/images/([0-9a-z-_]+)/(Dockerfile|werf.inc.yaml)$" $path "${1}#${2}#${3}#${4}" | split "#" }}
   {{- $ModuleName := $ImageData._2 }}
   {{- $ImageName := $ImageData._3 }}

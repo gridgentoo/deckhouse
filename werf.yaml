@@ -612,7 +612,7 @@ import:
   add: /terraform-provider-gcp/terraform-provider-gcp
   to: /usr/local/share/terraform/plugins/registry.terraform.io/{{ env "TF_GCP_NAMESPACE" }}/{{ env "TF_GCP_TYPE" }}/{{ env "TF_GCP_VERSION" }}/linux_amd64/terraform-provider-google
   after: setup
-- artifact: images-tags
+- image: images-tags
   add: /images_tags.json
   to: /deckhouse/candi/images_tags.json
   after: setup
@@ -806,7 +806,7 @@ args:
 {{- end }}
 
 ---
-artifact: images-tags
+image: images-tags
 from: {{ env "BASE_ALPINE" }}
 dependencies:
 {{- range $path, $content := $modules_images_build_files  }}
@@ -845,7 +845,7 @@ shell:
 image: dev
 from: dev-prebuild
 import:
-- artifact: images-tags
+- image: images-tags
   add: /images_tags.json
   to: /deckhouse/modules/images_tags.json
   after: setup
@@ -853,7 +853,7 @@ import:
 image: tests
 from: tests-prebuild
 import:
-- artifact: images-tags
+- image: images-tags
   add: /images_tags.json
   to: /deckhouse/modules/images_tags.json
   after: setup

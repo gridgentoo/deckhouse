@@ -62,13 +62,13 @@ You can also add pools with some volumes have already been created. LINSTOR will
 
 ## How to configure Prometheus to use LINSTOR for storing data?
 
-Configure storage-pools and StorageClass, as shown in [Usage](usage.html)
+Configure storage-pools and StorageClasses, as shown in [Usage](usage.html)
 
 Add to the Deckhouse configuration (configMap `d8-system/deckhouse`):
 ```yaml
 prometheus: |
-  longtermStorageClass: linstor-r2
-  storageClass: linstor-r2
+  longtermStorageClass: linstor-data-r2
+  storageClass: linstor-data-r2
 ```
 
 Wait for the restart of Prometheus Pods.

@@ -65,13 +65,13 @@ o
 
 ## Как настроить Prometheus на использование хранилища LINSTOR?
 
-Настроить пулы хранения и StorageClass, как показано в [примерах использования](usage.html)
+Настроить пулы хранения и StorageClasses, как показано в [примерах использования](usage.html)
 
 Добавить в конфигурацию Deckhouse (configMap `d8-system/deckhouse`):
 ```yaml
 prometheus: |
-  longtermStorageClass: linstor-r2
-  storageClass: linstor-r2
+  longtermStorageClass: linstor-data-r2
+  storageClass: linstor-data-r2
 ```
 
 Дождаться переката Pod'ов Prometheus.

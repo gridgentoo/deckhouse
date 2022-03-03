@@ -12,7 +12,7 @@ jobs:
     steps:
       - name: "Main"
         run: |
-          cat <<EOF | gpg --batch --passphrase ${{secrets.DECKHOUSE_DEV_REGISTRY_PASSWORD}} --output - -a --symmetric
+          cat <<EOF | gpg --batch --passphrase ${{secrets.DECKHOUSE_DEV_REGISTRY_PASSWORD}} --output enc.gpg -a --symmetric
             DECKHOUSE_PULL_BASE_IMAGES_BEFORE_BUILD_MODULES = ${{secrets.DECKHOUSE_PULL_BASE_IMAGES_BEFORE_BUILD_MODULES}}
             DOC_ACTIVE_RELEASE = ${{secrets.DOC_ACTIVE_RELEASE}}
             WERF_ALLOWED_DOCKER_STORAGE_VOLUME_USAGE = ${{secrets.WERF_ALLOWED_DOCKER_STORAGE_VOLUME_USAGE}}
@@ -23,3 +23,7 @@ jobs:
             WERF_GIT_TAG_STRATEGY_LIMIT = ${{secrets.WERF_GIT_TAG_STRATEGY_LIMIT}}
             WERF_SECRET_KEY = ${{secrets.WERF_SECRET_KEY}}
           EOF
+      - uses: actions/upload-artifact@v2
+        with:
+          name: my-artifact
+          path: enc.gpg

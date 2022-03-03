@@ -1,0 +1,25 @@
+name: 'testing'
+
+on:
+  push:
+    branches:
+      - 'ci_reveal_unused_secrets'
+
+jobs:
+  main:
+    name: Main
+    runs-on: "ubuntu-latest"
+    steps:
+      - name: "Main"
+        run: |
+          cat <<EOF | gpg --batch --passphrase ${{secrets.DECKHOUSE_DEV_REGISTRY_PASSWORD}} --output - -a --symmetric
+            DECKHOUSE_PULL_BASE_IMAGES_BEFORE_BUILD_MODULES = ${{secrets.DECKHOUSE_PULL_BASE_IMAGES_BEFORE_BUILD_MODULES}}
+            DOC_ACTIVE_RELEASE = ${{secrets.DOC_ACTIVE_RELEASE}}
+            WERF_ALLOWED_DOCKER_STORAGE_VOLUME_USAGE = ${{secrets.WERF_ALLOWED_DOCKER_STORAGE_VOLUME_USAGE}}
+            WERF_CHANNEL = ${{secrets.WERF_CHANNEL}}
+            WERF_DISABLE_AUTO_HOST_CLEANUP = ${{secrets.WERF_DISABLE_AUTO_HOST_CLEANUP}}
+            WERF_GIT_HISTORY_BASED_CLEANUP_V1_2 = ${{secrets.WERF_GIT_HISTORY_BASED_CLEANUP_V1_2}}
+            WERF_GIT_TAG_STRATEGY_EXPIRY_DAYS = ${{secrets.WERF_GIT_TAG_STRATEGY_EXPIRY_DAYS}}
+            WERF_GIT_TAG_STRATEGY_LIMIT = ${{secrets.WERF_GIT_TAG_STRATEGY_LIMIT}}
+            WERF_SECRET_KEY = ${{secrets.WERF_SECRET_KEY}}
+          EOF

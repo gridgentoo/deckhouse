@@ -64,11 +64,15 @@ func TestParseThinPoolsWithTags(t *testing.T) {
 	if err != nil {
 		t.Errorf("\nexpected no error\ngot: %s", err.Error())
 	}
-	expected := []ThinPool{
-		ThinPool{
-			Name:   "data",
-			VGName: "linstor_data",
-			Tags:   []string{"linstor-ssd"},
+	expected := []lclient.StoragePool{
+		lclient.StoragePool{
+			StoragePoolName: "ssd",
+			ProviderKind:    lclient.LVM_THIN,
+			NodeName:        nodeName,
+			Props: map[string]string{
+				"StorDriver/LvmVg":    "linstor_data",
+				"StorDriver/ThinPool": "data",
+			},
 		},
 	}
 	if !reflect.DeepEqual(got, expected) {
@@ -110,10 +114,14 @@ func TestParseVolumeGroupsWithTags(t *testing.T) {
 	if err != nil {
 		t.Errorf("\nexpected no error\ngot: %s", err.Error())
 	}
-	expected := []VolumeGroup{
-		VolumeGroup{
-			Name: "linstor_data",
-			Tags: []string{"linstor-data"},
+	expected := []lclient.StoragePool{
+		lclient.StoragePool{
+			StoragePoolName: "data",
+			ProviderKind:    lclient.LVM,
+			NodeName:        nodeName,
+			Props: map[string]string{
+				"StorDriver/LvmVg": "linstor_data",
+			},
 		},
 	}
 	if !reflect.DeepEqual(got, expected) {
@@ -121,61 +129,17 @@ func TestParseVolumeGroupsWithTags(t *testing.T) {
 	}
 }
 
-func TestMakeLinstorStoragePoolLVMThin(t *testing.T) {
-	tp := ThinPool{
-		Name:   "data",
-		VGName: "linstor_data",
-		Tags:   []string{"linstor-ssd"},
-	}
-	got, err := makeLinstorStoragePool(&tp)
-	if err != nil {
-		t.Errorf("\nexpected no error\ngot: %s", err.Error())
-	}
-	expected := lclient.StoragePool{
+func TestNewKubernetesStorageClasses(t *testing.T) {
+	tp := lclient.StoragePool{
 		StoragePoolName: "ssd",
 		ProviderKind:    lclient.LVM_THIN,
+		NodeName:        nodeName,
 		Props: map[string]string{
 			"StorDriver/LvmVg":    "linstor_data",
 			"StorDriver/ThinPool": "data",
 		},
 	}
-	if !reflect.DeepEqual(got, expected) {
-		t.Errorf("\nexpected: %+v\ngot: %+v", expected, got)
-	}
-}
-
-func TestMakeLinstorStoragePoolLVM(t *testing.T) {
-	vg := VolumeGroup{
-		Name: "linstor_data",
-		Tags: []string{"linstor-data"},
-	}
-	got, err := makeLinstorStoragePool(&vg)
-	if err != nil {
-		t.Errorf("\nexpected no error\ngot: %s", err.Error())
-	}
-	expected := lclient.StoragePool{
-		StoragePoolName: "data",
-		ProviderKind:    lclient.LVM,
-		Props: map[string]string{
-			"StorDriver/LvmVg": "linstor_data",
-		},
-	}
-	if !reflect.DeepEqual(got, expected) {
-		t.Errorf("\nexpected: %+v\ngot: %+v", expected, got)
-	}
-}
-
-func TestMakeKubernetesStorageClasses(t *testing.T) {
-	tp := ThinPool{
-		Name:   "data",
-		VGName: "linstor_data",
-		Tags:   []string{"linstor-ssd"},
-	}
-	got, err := makeKubernetesStorageClass(&tp, 2)
-
-	if err != nil {
-		t.Errorf("\nexpected no error\ngot: %s", err.Error())
-	}
+	got := newKubernetesStorageClass(&tp, 2)
 
 	volBindMode := storagev1.VolumeBindingImmediate
 	allowVolumeExpansion := true
@@ -202,64 +166,63 @@ func TestMakeKubernetesStorageClasses(t *testing.T) {
 
 func TestCandidatesLoop(t *testing.T) {
 
-	vg1 := VolumeGroup{
-		Name: "linstor_data",
-		Tags: []string{"linstor-data"},
+	vg1 := lclient.StoragePool{
+		StoragePoolName: "data",
+		ProviderKind:    lclient.LVM,
+		NodeName:        nodeName,
+		Props: map[string]string{
+			"StorDriver/LvmVg": "linstor_data",
+		},
 	}
-	vg2 := VolumeGroup{
-		Name: "linstor_hdd",
-		Tags: []string{"linstor-hdd"},
+
+	vg2 := lclient.StoragePool{
+		StoragePoolName: "hdd",
+		ProviderKind:    lclient.LVM,
+		NodeName:        nodeName,
+		Props: map[string]string{
+			"StorDriver/LvmVg": "linstor_hdd",
+		},
 	}
-	tp := ThinPool{
-		Name:   "data",
-		VGName: "linstor_data",
-		Tags:   []string{"linstor-ssd"},
+
+	tp := lclient.StoragePool{
+		StoragePoolName: "ssd",
+		ProviderKind:    lclient.LVM_THIN,
+		NodeName:        nodeName,
+		Props: map[string]string{
+			"StorDriver/LvmVg":    "linstor_data",
+			"StorDriver/ThinPool": "data",
+		},
 	}
 
 	ctx, cancel := context.WithTimeout(context.TODO(), 10*time.Millisecond)
+	defer cancel()
 	var attempt int
-	candidatesChannel := runCandidatesLoop(ctx, func() ([]StoragePoolCandidate, error) {
-		var s []StoragePoolCandidate
+	candidatesChannel := runCandidatesLoop(ctx, func() ([]lclient.StoragePool, error) {
+		var s []lclient.StoragePool
 		attempt++
 		if attempt < 2 {
-			s = []StoragePoolCandidate{&vg1, &vg2}
+			s = []lclient.StoragePool{vg1, vg2}
 		} else {
-			s = []StoragePoolCandidate{&vg1, &vg2, &tp}
+			s = []lclient.StoragePool{vg1, vg2, tp}
 		}
 		return s, nil
 	}, time.Millisecond)
 
-	var expectedStoragePoolsNames = []string{"data", "hdd", "ssd"}
 	var expectedStorageClassesNames = []string{
 		"linstor-data-r1", "linstor-data-r2", "linstor-data-r3",
 		"linstor-hdd-r1", "linstor-hdd-r2", "linstor-hdd-r3",
 		"linstor-ssd-r1", "linstor-ssd-r2", "linstor-ssd-r3",
 	}
-	var gotStoragePoolsNames []string
 	var gotStorageClassesNames []string
 
 	for candidate := range candidatesChannel {
-		// Create storage pool in LINSTOR
-		storagePool, err := makeLinstorStoragePool(candidate)
-		if err != nil {
-			t.Errorf("failed to generate LINSTOR storage pool: %s", err)
-		}
-		gotStoragePoolsNames = append(gotStoragePoolsNames, storagePool.StoragePoolName)
-
 		// Create StorageClasses in Kubernetes
 		for r := 1; r <= maxReplicasNum; r++ {
-			storageClass, err := makeKubernetesStorageClass(candidate, r)
-			if err != nil {
-				t.Errorf("failed to generate Kubernetes storage class: %s", err)
-			}
+			storageClass := newKubernetesStorageClass(&candidate, r)
 			gotStorageClassesNames = append(gotStorageClassesNames, storageClass.GetName())
 		}
 	}
 
-	cancel()
-	if !reflect.DeepEqual(gotStoragePoolsNames, expectedStoragePoolsNames) {
-		t.Errorf("\nexpected LINSTOR storage pools: %+v\ngot: %+v", expectedStoragePoolsNames, gotStoragePoolsNames)
-	}
 	if !reflect.DeepEqual(gotStorageClassesNames, expectedStorageClassesNames) {
 		t.Errorf("\nexpected Kubernetes storage classes: %+v\ngot: %+v", expectedStorageClassesNames, gotStorageClassesNames)
 	}

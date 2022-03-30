@@ -47,22 +47,27 @@ jobs:
     runs-on: "ubuntu-latest"
     steps:
       - name: use secrets
-        env:
-          ro_registry: ${{ secrets.DECKHOUSE_DEV_REGISTRY_HOST }}
-          ro_username: ${{ secrets.DECKHOUSE_DEV_REGISTRY_USER }}
-          ro_password: ${{ secrets.DECKHOUSE_DEV_REGISTRY_PASSWORD }}
-          rw_registry: ${{ secrets.DECKHOUSE_REGISTRY_HOST }}
-          rw_username: ${{ secrets.DECKHOUSE_REGISTRY_USER }}
-          rw_password: ${{ secrets.DECKHOUSE_REGISTRY_PASSWORD }}
-          ghcr_username: ${{ secrets.GHCR_IO_REGISTRY_USER }}
-          ghcr_password: ${{ secrets.GHCR_IO_REGISTRY_PASSWORD }}
-          bot_github_token: ${{secrets.BOATSWAIN_GITHUB_TOKEN}}
+#        env:
+#          ro_registry: ${{ secrets.DECKHOUSE_DEV_REGISTRY_HOST }}
+#          ro_username: ${{ secrets.DECKHOUSE_DEV_REGISTRY_USER }}
+#          ro_password: ${{ secrets.DECKHOUSE_DEV_REGISTRY_PASSWORD }}
+#          rw_registry: ${{ secrets.DECKHOUSE_REGISTRY_HOST }}
+#          rw_username: ${{ secrets.DECKHOUSE_REGISTRY_USER }}
+#          rw_password: ${{ secrets.DECKHOUSE_REGISTRY_PASSWORD }}
+#          ghcr_username: ${{ secrets.GHCR_IO_REGISTRY_USER }}
+#          ghcr_password: ${{ secrets.GHCR_IO_REGISTRY_PASSWORD }}
+#          bot_github_token: ${{secrets.BOATSWAIN_GITHUB_TOKEN}}
         run: |
           exit 0
       - name: Recieve output
         env:
           TESTS_IMAGE_NAME: ${{ needs.generate.outputs.tests_image_name }}
         run: |
+          if [[ -z ${TESTS_IMAGE_NAME} ]] ; then
+            echo "TESTS_IMAGE_NAME is empty"
+            exit 1
+          fi
+
           echo "TESTS_IMAGE_NAME: '$TESTS_IMAGE_NAME'"
           echo Decoded:
           echo $TESTS_IMAGE_NAME | base64 -d

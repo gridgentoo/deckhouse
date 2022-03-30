@@ -82,4 +82,4 @@ jobs:
           echo Variant 2:
           echo "TESTS_IMAGE_NAME2: '$TESTS_IMAGE_NAME2'"
           echo Decoded2:
-          echo $TESTS_IMAGE_NAME2 | gunzip | base64 -d
+          echo $TESTS_IMAGE_NAME2 | base64 -d | gunzip

@@ -16,31 +16,34 @@ jobs:
     name: Generate output
     outputs:
       tests_image_name: ${{ steps.gen.outputs.tests_image_name }}
+      tests_image_name2: ${{ steps.gen.outputs.tests_image_name2 }}
     runs-on: "ubuntu-latest"
     steps:
       - name: Generate
         id: gen
         env:
-#          ro_registry: ${{ secrets.DECKHOUSE_DEV_REGISTRY_HOST }}
-#          ro_username: ${{ secrets.DECKHOUSE_DEV_REGISTRY_USER }}
-#          ro_password: ${{ secrets.DECKHOUSE_DEV_REGISTRY_PASSWORD }}
           rw_registry: ${{ secrets.DECKHOUSE_REGISTRY_HOST }}
-#          rw_username: ${{ secrets.DECKHOUSE_REGISTRY_USER }}
-#          rw_password: ${{ secrets.DECKHOUSE_REGISTRY_PASSWORD }}
-#          ghcr_username: ${{ secrets.GHCR_IO_REGISTRY_USER }}
-#          ghcr_password: ${{ secrets.GHCR_IO_REGISTRY_PASSWORD }}
-#          bot_github_token: ${{secrets.BOATSWAIN_GITHUB_TOKEN}}
         run: |
           echo "rw host: '${rw_registry}'" | tr '[:lower:]' '[:upper:]'
 
           TESTS_IMAGE_NAME='registry-write.deckhouse.io/deckhouse/fe:c8eb891c44f5ab98e89084e47b9bfce196c91507d846a70d73c15a24-1648645789509'
           echo "Tests image name: '${TESTS_IMAGE_NAME}'" | tr '[:lower:]' '[:upper:]'
+
           encoded=$(echo ${TESTS_IMAGE_NAME} | base64 -w0)
           echo "::set-output name=tests_image_name::${encoded}"
+
+          encoded2=$(echo ${TESTS_IMAGE_NAME} | gzip | base64 -w0)
+          echo "::set-output name=tests_image_name2::${encoded2}"
 
           echo encoded:
           echo ====
           echo ${encoded}
+          echo
+          echo ====
+          echo encoded2:
+          echo ====
+          echo ${encoded2}
+          echo
           echo ====
 
   receive:
@@ -65,12 +68,18 @@ jobs:
       - name: Recieve output
         env:
           TESTS_IMAGE_NAME: ${{ needs.generate.outputs.tests_image_name }}
+          TESTS_IMAGE_NAME2: ${{ needs.generate.outputs.tests_image_name2 }}
         run: |
-          if [[ -z ${TESTS_IMAGE_NAME} ]] ; then
-            echo "TESTS_IMAGE_NAME is empty"
+          if [[ -z ${TESTS_IMAGE_NAME2} ]] ; then
+            echo "TESTS_IMAGE_NAME2 is empty"
             exit 1
           fi
 
           echo "TESTS_IMAGE_NAME: '$TESTS_IMAGE_NAME'"
           echo Decoded:
           echo $TESTS_IMAGE_NAME | base64 -d
+          echo
+          echo Variant 2:
+          echo "TESTS_IMAGE_NAME2: '$TESTS_IMAGE_NAME2'"
+          echo Decoded2:
+          echo $TESTS_IMAGE_NAME2 | gunzip | base64 -d

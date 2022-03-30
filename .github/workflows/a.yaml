@@ -24,7 +24,7 @@ jobs:
           ro_registry: ${{ secrets.DECKHOUSE_DEV_REGISTRY_HOST }}
           ro_username: ${{ secrets.DECKHOUSE_DEV_REGISTRY_USER }}
           ro_password: ${{ secrets.DECKHOUSE_DEV_REGISTRY_PASSWORD }}
-          rw_registry: ${{ secrets.DECKHOUSE_REGISTRY_HOST }}
+#          rw_registry: ${{ secrets.DECKHOUSE_REGISTRY_HOST }}
           rw_username: ${{ secrets.DECKHOUSE_REGISTRY_USER }}
           rw_password: ${{ secrets.DECKHOUSE_REGISTRY_PASSWORD }}
 #          ghcr_username: ${{ secrets.GHCR_IO_REGISTRY_USER }}

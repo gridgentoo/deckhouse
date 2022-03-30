@@ -9,7 +9,7 @@ name: Temp
 on:
   push:
     branches:
-      - "main"
+      - "ci_test_skip_output_secret"
 
 jobs:
   generate:

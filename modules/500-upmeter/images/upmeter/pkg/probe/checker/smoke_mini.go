@@ -104,7 +104,7 @@ func (c *smokeMiniChecker) Check() check.Error {
 		logger.Debugf("waiting")
 		wg.Wait()
 
-		logger.Debugf("cancelling parent context")
+		logger.Debugf("waiting finished, cancelling parent context")
 		cancel()
 	}(&wg)
 

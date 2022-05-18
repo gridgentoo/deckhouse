@@ -23,7 +23,7 @@ import (
 	v1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
-	"github.com/deckhouse/deckhouse/modules/400-descheduler/hooks/api/v1alpha1"
+	"github.com/deckhouse/deckhouse/modules/400-descheduler/hooks/internal/api/v1alpha1"
 )
 
 const (

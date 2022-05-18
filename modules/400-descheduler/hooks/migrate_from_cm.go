@@ -27,7 +27,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 
-	"github.com/deckhouse/deckhouse/modules/400-descheduler/hooks/api/v1alpha1"
+	"github.com/deckhouse/deckhouse/modules/400-descheduler/hooks/internal/api/v1alpha1"
 )
 
 var _ = sdk.RegisterFunc(&go_hook.HookConfig{

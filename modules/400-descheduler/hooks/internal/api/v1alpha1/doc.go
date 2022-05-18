@@ -1,4 +1,4 @@
-//go:generate controller-gen object:headerFile=boilerplate.go.txt crd:allowDangerousTypes=true output:artifacts:config=../../../crds
+//go:generate controller-gen object:headerFile=boilerplate.go.txt crd:allowDangerousTypes=true output:artifacts:config=../../../../crds
 
 /*
 Copyright 2021 Flant JSC

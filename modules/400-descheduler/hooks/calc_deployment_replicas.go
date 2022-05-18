@@ -19,7 +19,16 @@ package hooks
 import (
 	"github.com/flant/addon-operator/pkg/module_manager/go_hook"
 	"github.com/flant/addon-operator/sdk"
+	"github.com/flant/shell-operator/pkg/kube/object_patch"
+	v1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+
+	"github.com/deckhouse/deckhouse/modules/400-descheduler/hooks/api/v1alpha1"
+)
+
+const (
+	deschedulerSpecsValuesPath = "descheduler.internal.deschedulers"
+	deschedulerNamespace       = "d8-descheduler"
 )
 
 var _ = sdk.RegisterFunc(&go_hook.HookConfig{
@@ -27,25 +36,69 @@ var _ = sdk.RegisterFunc(&go_hook.HookConfig{
 	Queue:        "/modules/descheduler",
 	Kubernetes: []go_hook.KubernetesConfig{
 		{
-			Name:       "nodes",
-			ApiVersion: "v1",
-			Kind:       "Node",
-			FilterFunc: applyNodesFilter,
+			Name:       "deschedulers",
+			ApiVersion: "deckhouse.io/v1alpha1",
+			Kind:       "Descheduler",
+			FilterFunc: applyDeschedulerFilter,
+		},
+		{
+			Name:          "deployments",
+			ApiVersion:    "v1",
+			Kind:          "Deployments",
+			FilterFunc:    deschedulerDeploymentReadiness,
+			LabelSelector: nil,
 		},
 	},
 }, nodesCount)
 
-func applyNodesFilter(obj *unstructured.Unstructured) (go_hook.FilterResult, error) {
-	return obj.GetName(), nil
+type DeschedulerDeploymentInfo struct {
+	Name  string
+	Ready bool
+}
+
+func applyDeschedulerFilter(obj *unstructured.Unstructured) (go_hook.FilterResult, error) {
+	descheduler := &v1alpha1.Descheduler{}
+	err := sdk.FromUnstructured(obj, descheduler)
+	if err != nil {
+		return nil, err
+	}
+
+	// don't fire up on status changes
+	descheduler.Status = v1alpha1.DeschedulerStatus{}
+
+	return descheduler, nil
+}
+
+func deschedulerDeploymentReadiness(obj *unstructured.Unstructured) (go_hook.FilterResult, error) {
+	deployment := &v1.Deployment{}
+	err := sdk.FromUnstructured(obj, deployment)
+	if err != nil {
+		return nil, err
+	}
+
+	deschedulerDeploymentInfo := &DeschedulerDeploymentInfo{
+		Name:  deployment.Name,
+		Ready: deployment.Status.ReadyReplicas == deployment.Status.Replicas,
+	}
+
+	return deschedulerDeploymentInfo, nil
 }
 
 func nodesCount(input *go_hook.HookInput) error {
-	nodes := input.Snapshots["nodes"]
+	var (
+		deschedulers = input.Snapshots["deschedulers"]
+		deployments  = input.Snapshots["deployments"]
+	)
 
-	if len(nodes) > 1 {
-		input.Values.Set("descheduler.internal.replicas", 1)
-	} else {
-		input.Values.Set("descheduler.internal.replicas", 0)
+	input.Values.Set(deschedulerSpecsValuesPath, deschedulers)
+
+	for _, deploymentRaw := range deployments {
+		deployment := deploymentRaw.(*DeschedulerDeploymentInfo)
+
+		input.PatchCollector.MergePatch(map[string]v1alpha1.DeschedulerStatus{
+			"status": {Ready: deployment.Ready}},
+			"deckhouse.io/v1alpha1", "Descheduler", deschedulerNamespace,
+			deployment.Name, object_patch.WithSubresource("status"))
 	}
 
 	return nil

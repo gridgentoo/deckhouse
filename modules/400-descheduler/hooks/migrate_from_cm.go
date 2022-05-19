@@ -36,7 +36,7 @@ var _ = sdk.RegisterFunc(&go_hook.HookConfig{
 
 func createFirstDeschedulerCR(input *go_hook.HookInput) error {
 	config, ok := input.ConfigValues.GetOk("descheduler")
-	if !ok {
+	if !ok || len(config.Map()) == 0 {
 		return nil
 	}
 
@@ -57,10 +57,10 @@ func createFirstDeschedulerCR(input *go_hook.HookInput) error {
 		},
 	}
 
-	if value := config.Get("descheduler.removeDuplicates"); value.Exists() {
+	if value := config.Get("removeDuplicates"); value.Exists() {
 		deschedulerCR.Spec.DeschedulerPolicy.Strategies.RemoveDuplicates = &v1alpha1.RemoveDuplicates{}
 	}
-	if value := config.Get("descheduler.lowNodeUtilization"); value.Exists() {
+	if value := config.Get("lowNodeUtilization"); value.Exists() {
 		deschedulerCR.Spec.DeschedulerPolicy.Strategies.LowNodeUtilization = &v1alpha1.LowNodeUtilization{
 			NodeResourceUtilizationThresholds: &v1alpha1.NodeResourceUtilizationThresholdsFiltering{
 				Thresholds: map[v1.ResourceName]v1alpha1.Percentage{
@@ -76,7 +76,7 @@ func createFirstDeschedulerCR(input *go_hook.HookInput) error {
 			},
 		}
 	}
-	if value := config.Get("descheduler.highNodeUtilization"); value.Exists() {
+	if value := config.Get("highNodeUtilization"); value.Exists() {
 		deschedulerCR.Spec.DeschedulerPolicy.Strategies.HighNodeUtilization = &v1alpha1.HighNodeUtilization{
 			NodeResourceUtilizationThresholds: &v1alpha1.NodeResourceUtilizationThresholdsFiltering{
 				Thresholds: map[v1.ResourceName]v1alpha1.Percentage{
@@ -86,21 +86,21 @@ func createFirstDeschedulerCR(input *go_hook.HookInput) error {
 			},
 		}
 	}
-	if value := config.Get("descheduler.removePodsViolatingInterPodAntiAffinity"); value.Exists() {
+	if value := config.Get("removePodsViolatingInterPodAntiAffinity"); value.Exists() {
 		deschedulerCR.Spec.DeschedulerPolicy.Strategies.RemovePodsViolatingInterPodAntiAffinity = &v1alpha1.RemovePodsViolatingInterPodAntiAffinity{}
 	}
-	if value := config.Get("descheduler.removePodsViolatingNodeAffinity"); value.Exists() {
+	if value := config.Get("removePodsViolatingNodeAffinity"); value.Exists() {
 		deschedulerCR.Spec.DeschedulerPolicy.Strategies.RemovePodsViolatingNodeAffinity = &v1alpha1.RemovePodsViolatingNodeAffinity{
 			NodeAffinityType: []string{"requiredDuringSchedulingIgnoredDuringExecution"},
 		}
 	}
-	if value := config.Get("descheduler.removePodsViolatingNodeTaints"); value.Exists() {
+	if value := config.Get("removePodsViolatingNodeTaints"); value.Exists() {
 		deschedulerCR.Spec.DeschedulerPolicy.Strategies.RemovePodsViolatingNodeTaints = &v1alpha1.RemovePodsViolatingNodeTaints{}
 	}
-	if value := config.Get("descheduler.removePodsViolatingTopologySpreadConstraint"); value.Exists() {
+	if value := config.Get("removePodsViolatingTopologySpreadConstraint"); value.Exists() {
 		deschedulerCR.Spec.DeschedulerPolicy.Strategies.RemovePodsViolatingTopologySpreadConstraint = &v1alpha1.RemovePodsViolatingTopologySpreadConstraint{}
 	}
-	if value := config.Get("descheduler.removePodsHavingTooManyRestarts"); value.Exists() {
+	if value := config.Get("removePodsHavingTooManyRestarts"); value.Exists() {
 		deschedulerCR.Spec.DeschedulerPolicy.Strategies.RemovePodsHavingTooManyRestarts = &v1alpha1.RemovePodsHavingTooManyRestarts{
 			PodsHavingTooManyRestarts: &v1alpha1.PodsHavingTooManyRestartsParameters{
 				PodRestartThreshold:     100,
@@ -108,7 +108,7 @@ func createFirstDeschedulerCR(input *go_hook.HookInput) error {
 			},
 		}
 	}
-	if value := config.Get("descheduler.podLifeTime"); value.Exists() {
+	if value := config.Get("podLifeTime"); value.Exists() {
 		deschedulerCR.Spec.DeschedulerPolicy.Strategies.PodLifeTime = &v1alpha1.PodLifeTime{
 			PodLifeTime: &v1alpha1.PodLifeTimeParameters{
 				MaxPodLifeTimeSeconds: uintPtr(86400),
@@ -117,7 +117,7 @@ func createFirstDeschedulerCR(input *go_hook.HookInput) error {
 		}
 	}
 
-	if value := config.Get("descheduler.nodeSelector"); value.Exists() {
+	if value := config.Get("nodeSelector"); value.Exists() {
 		rawSelectorMap := value.Map()
 		nodeSelectorSet := make(labels.Set, len(rawSelectorMap))
 		for k, v := range rawSelectorMap {
@@ -127,7 +127,7 @@ func createFirstDeschedulerCR(input *go_hook.HookInput) error {
 		deschedulerCR.Spec.DeploymentTemplate.NodeSelector = nodeSelectorSet
 	}
 
-	if value := config.Get("descheduler.tolerations"); value.Exists() {
+	if value := config.Get("tolerations"); value.Exists() {
 		var tolerations []v1.Toleration
 
 		err := mapstructure.Decode(value.Value(), &tolerations)
@@ -140,7 +140,7 @@ func createFirstDeschedulerCR(input *go_hook.HookInput) error {
 
 	input.PatchCollector.Create(deschedulerCR, object_patch.UpdateIfExists())
 
-	input.ConfigValues.Remove("descheduler")
+	input.ConfigValues.Set("descheduler", map[string]string{})
 
 	return nil
 }

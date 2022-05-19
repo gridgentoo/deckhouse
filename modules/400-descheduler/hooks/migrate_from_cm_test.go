@@ -19,62 +19,32 @@ package hooks
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	v1 "k8s.io/api/core/v1"
 
 	. "github.com/deckhouse/deckhouse/testing/hooks"
 )
 
 var _ = Describe("Modules :: descheduler :: hooks :: calc_deployment_replicas ::", func() {
 	f := HookExecutionConfigInit(`{"descheduler":{"internal":{}}}`, ``)
-
-	Context("Empty cluster", func() {
-		BeforeEach(func() {
-			f.BindingContexts.Set(f.KubeStateSet(``))
-			f.RunHook()
-		})
-		It("nodeCount must be 0", func() {
-			Expect(f).To(ExecuteSuccessfully())
-			Expect(f.ValuesGet("descheduler.internal.replicas").String()).To(Equal("0"))
-		})
-	})
-
-	Context("Cluster with one node", func() {
-		BeforeEach(func() {
-			nodes := `
----
-apiVersion: v1
-kind: Node
-metadata:
-  name: node-1
-`
-			f.BindingContexts.Set(f.KubeStateSet(nodes))
-			f.RunHook()
-		})
-		It("nodeCount must be 0", func() {
-			Expect(f).To(ExecuteSuccessfully())
-			Expect(f.ValuesGet("descheduler.internal.replicas").String()).To(Equal("0"))
-		})
-	})
+	f.RegisterCRD("deckhouse.io", "v1alpha1", "Descheduler", false)
 
 	Context("Cluster with two node", func() {
 		BeforeEach(func() {
-			nodes := `
----
-apiVersion: v1
-kind: Node
-metadata:
-  name: node-1
----
-apiVersion: v1
-kind: Node
-metadata:
-  name: node-2
-`
-			f.BindingContexts.Set(f.KubeStateSet(nodes))
+			f.ConfigValuesSet("descheduler.tolerations", []v1.Toleration{
+				{
+					Key:   "test",
+					Value: "test",
+				},
+			})
+			f.ConfigValuesSet("descheduler.removePodsHavingTooManyRestarts", true)
+			f.KubeStateSet("")
 			f.RunHook()
 		})
 		It("nodeCount must be 2", func() {
 			Expect(f).To(ExecuteSuccessfully())
-			Expect(f.ValuesGet("descheduler.internal.replicas").String()).To(Equal("1"))
+			Expect(f.ConfigValuesGet("descheduler").Map()).To(HaveLen(0))
+
+			f.KubernetesGlobalResource("Descheduler", "default").Exists()
 		})
 	})
 

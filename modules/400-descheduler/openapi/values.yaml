@@ -8,5 +8,5 @@ properties:
       deschedulers:
         type: array
         items:
-          type: map
+          type: object
           additionalProperties: true

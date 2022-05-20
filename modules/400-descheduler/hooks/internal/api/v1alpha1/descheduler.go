@@ -48,7 +48,7 @@ type DeschedulerSpec struct {
 }
 
 type DeschedulerDeploymentTemplate struct {
-	NodeSelector map[string]string `json:"affinity,omitempty"`
+	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 
 	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
 

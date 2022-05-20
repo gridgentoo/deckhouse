@@ -24,11 +24,11 @@ import (
 	. "github.com/deckhouse/deckhouse/testing/hooks"
 )
 
-var _ = Describe("Modules :: descheduler :: hooks :: calc_deployment_replicas ::", func() {
+var _ = Describe("Modules :: descheduler :: hooks :: migrate_from_cm ::", func() {
 	f := HookExecutionConfigInit(`{"descheduler":{"internal":{}}}`, ``)
 	f.RegisterCRD("deckhouse.io", "v1alpha1", "Descheduler", false)
 
-	Context("Cluster with two node", func() {
+	Context("Cluster with configured descheduler", func() {
 		BeforeEach(func() {
 			f.ConfigValuesSet("descheduler.tolerations", []v1.Toleration{
 				{
@@ -40,7 +40,7 @@ var _ = Describe("Modules :: descheduler :: hooks :: calc_deployment_replicas ::
 			f.KubeStateSet("")
 			f.RunHook()
 		})
-		It("nodeCount must be 2", func() {
+		It("Should create the default Descheduler CR", func() {
 			Expect(f).To(ExecuteSuccessfully())
 			Expect(f.ConfigValuesGet("descheduler").Map()).To(HaveLen(0))
 

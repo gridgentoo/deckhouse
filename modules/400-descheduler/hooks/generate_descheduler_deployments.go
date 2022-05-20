@@ -43,13 +43,13 @@ var _ = sdk.RegisterFunc(&go_hook.HookConfig{
 		},
 		{
 			Name:          "deployments",
-			ApiVersion:    "v1",
+			ApiVersion:    "apps/v1",
 			Kind:          "Deployments",
 			FilterFunc:    deschedulerDeploymentReadiness,
 			LabelSelector: nil,
 		},
 	},
-}, nodesCount)
+}, generateValues)
 
 type DeschedulerDeploymentInfo struct {
 	Name  string
@@ -84,7 +84,7 @@ func deschedulerDeploymentReadiness(obj *unstructured.Unstructured) (go_hook.Fil
 	return deschedulerDeploymentInfo, nil
 }
 
-func nodesCount(input *go_hook.HookInput) error {
+func generateValues(input *go_hook.HookInput) error {
 	var (
 		deschedulers = input.Snapshots["deschedulers"]
 		deployments  = input.Snapshots["deployments"]

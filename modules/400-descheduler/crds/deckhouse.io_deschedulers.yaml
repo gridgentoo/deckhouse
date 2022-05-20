@@ -41,7 +41,7 @@ spec:
             properties:
               deploymentTemplate:
                 properties:
-                  affinity:
+                  nodeSelector:
                     additionalProperties:
                       type: string
                     type: object

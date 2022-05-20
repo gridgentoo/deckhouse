@@ -770,9 +770,15 @@ entries:
                     ru: Примеры
                   url: /modules/400-descheduler/usage.html
                 - title:
-                    en: Configuration
-                    ru: Настройки
-                  url: /modules/400-descheduler/configuration.html
+                    en: Reference
+                    ru: Справка
+                  folders:
+                    - title:
+                        en: Configuration
+                        ru: Настройки
+                      url: /modules/400-descheduler/configuration.html
+                    - title: Custom Resources
+                      url: /modules/400-descheduler/cr.html
             - title: pod-reloader
               folders:
                 - title:

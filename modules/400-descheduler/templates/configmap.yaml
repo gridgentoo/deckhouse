@@ -29,7 +29,7 @@ data:
         enabled: false
   {{- end }}
 
-  {{- if hasKey $policy "removePodsViolatingNodeAffinity" }}
+  {{- if hasKey $strategies "removePodsViolatingNodeAffinity" }}
       "RemovePodsViolatingNodeAffinity":
         enabled: true
     {{- if $strategies.removePodsViolatingNodeAffinity  }}

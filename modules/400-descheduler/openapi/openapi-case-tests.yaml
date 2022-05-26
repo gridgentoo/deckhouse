@@ -2,7 +2,7 @@ positive:
   configValues:
   - {}
   values:
-  - { internal: {} }
+  - { internal: {"deschedulers": {}} }
 negative:
   configValues:
   - { somethingInConfig: yes }

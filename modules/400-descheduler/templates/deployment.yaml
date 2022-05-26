@@ -1,4 +1,4 @@
-{{- for $d := range .Values.descheduler.internal.deschedulers }}
+{{- range $d := .Values.descheduler.internal.deschedulers }}
   {{- $deschedulerSpec := $d.spec }}
   {{- if (.Values.global.enabledModules | has "vertical-pod-autoscaler-crd") }}
 ---

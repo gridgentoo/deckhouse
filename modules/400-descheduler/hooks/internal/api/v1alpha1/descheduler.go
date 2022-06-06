@@ -21,7 +21,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// Descheduler is a group of nodes in Kubernetes.
+// Descheduler is a description of a single descheduler instance
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:storageversion
@@ -42,20 +42,29 @@ type Descheduler struct {
 }
 
 type DeschedulerSpec struct {
+	// Defines Template of a descedhuler Deployment
 	DeploymentTemplate DeschedulerDeploymentTemplate `json:"deploymentTemplate,omitempty"`
 
+	// commonParameters and strategies follow descheduler's documentation
+	// https://github.com/kubernetes-sigs/descheduler#policy-and-strategies
 	DeschedulerPolicy DeschedulerPolicy `json:"deschedulerPolicy,omitempty"`
 }
 
 type DeschedulerDeploymentTemplate struct {
+	// NodeSelector is a selector which must be true for the pod to fit on a node.
+	// Selector which must match a node's labels for the pod to be scheduled on that node.
+	// More info: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
 	NodeSelector map[string]string `json:"nodeSelector,omitempty"`
 
+	// If specified, the pod's tolerations.
 	Tolerations []corev1.Toleration `json:"tolerations,omitempty"`
 
+	// Resource allocation policy
 	ResourcesRequests *ResourcesRequests `json:"resourcesRequests,omitempty"`
 }
 
 type ResourcesRequests struct {
+	// Defines VPA mode that applies to a given descheduler Deployment
 	// +kubebuilder:default=VPA
 	// +kubebuilder:validation:Enum=Manual;VPA;Off
 	Mode ResourcesRequestsMode `json:"mode,omitempty"`
@@ -70,8 +79,12 @@ const (
 )
 
 type DeschedulerPolicy struct {
+	// Parameters that apply to all policies
 	CommonParameters CommonParameters `json:"parameters,omitempty"`
 
+	// List of strategies with corresponding parameters for a given Descheduler instances
+	// To enable a strategy without giving it any parameters, specify it like this:
+	// removePodsViolatingNodeAffinity: {}
 	Strategies DeschedulerStrategies `json:"strategies,omitempty"`
 }
 
@@ -100,16 +113,25 @@ type CommonParameters struct {
 }
 
 type DeschedulerStrategies struct {
-	RemoveDuplicates                            *RemoveDuplicates                            `json:"removeDuplicates,omitempty"`
-	LowNodeUtilization                          *LowNodeUtilization                          `json:"lowNodeUtilization,omitempty"`
-	HighNodeUtilization                         *HighNodeUtilization                         `json:"highNodeUtilization,omitempty"`
-	RemovePodsViolatingInterPodAntiAffinity     *RemovePodsViolatingInterPodAntiAffinity     `json:"removePodsViolatingInterPodAntiAffinity,omitempty"`
-	RemovePodsViolatingNodeAffinity             *RemovePodsViolatingNodeAffinity             `json:"removePodsViolatingNodeAffinity,omitempty"`
-	RemovePodsViolatingNodeTaints               *RemovePodsViolatingNodeTaints               `json:"removePodsViolatingNodeTaints,omitempty"`
+	RemoveDuplicates *RemoveDuplicates `json:"removeDuplicates,omitempty"`
+
+	LowNodeUtilization *LowNodeUtilization `json:"lowNodeUtilization,omitempty"`
+
+	HighNodeUtilization *HighNodeUtilization `json:"highNodeUtilization,omitempty"`
+
+	RemovePodsViolatingInterPodAntiAffinity *RemovePodsViolatingInterPodAntiAffinity `json:"removePodsViolatingInterPodAntiAffinity,omitempty"`
+
+	RemovePodsViolatingNodeAffinity *RemovePodsViolatingNodeAffinity `json:"removePodsViolatingNodeAffinity,omitempty"`
+
+	RemovePodsViolatingNodeTaints *RemovePodsViolatingNodeTaints `json:"removePodsViolatingNodeTaints,omitempty"`
+
 	RemovePodsViolatingTopologySpreadConstraint *RemovePodsViolatingTopologySpreadConstraint `json:"removePodsViolatingTopologySpreadConstraint,omitempty"`
-	RemovePodsHavingTooManyRestarts             *RemovePodsHavingTooManyRestarts             `json:"removePodsHavingTooManyRestarts,omitempty"`
-	PodLifeTime                                 *PodLifeTime                                 `json:"podLifeTime,omitempty"`
-	RemoveFailedPods                            *RemoveFailedPods                            `json:"removeFailedPods,omitempty"`
+
+	RemovePodsHavingTooManyRestarts *RemovePodsHavingTooManyRestarts `json:"removePodsHavingTooManyRestarts,omitempty"`
+
+	PodLifeTime *PodLifeTime `json:"podLifeTime,omitempty"`
+
+	RemoveFailedPods *RemoveFailedPods `json:"removeFailedPods,omitempty"`
 }
 
 type RemoveDuplicates struct {
@@ -213,8 +235,6 @@ type RemoveFailedPodsParameters struct {
 	IncludingInitContainers bool     `json:"includingInitContainers,omitempty"`
 }
 
-// NamespacesFiltering carries a list of included/excluded namespaces
-// for which a given strategy is applicable.
 type NamespacesFiltering struct {
 	Namespaces `json:"namespaces,omitempty"`
 }

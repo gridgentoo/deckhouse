@@ -32,6 +32,7 @@ import (
 	"github.com/deckhouse/deckhouse/deckhouse-controller/pkg/helpers"
 	dhctl_commands "github.com/deckhouse/deckhouse/dhctl/cmd/dhctl/commands"
 	dhctl_app "github.com/deckhouse/deckhouse/dhctl/pkg/app"
+	"github.com/deckhouse/deckhouse/go_lib/dependency"
 )
 
 // Variables with component versions. They set by 'go build' command.
@@ -95,6 +96,8 @@ func main() {
 				os.Exit(1)
 			}
 			operator.Start()
+
+			dependency.SetAddonOperator(operator)
 
 			// Block action by waiting signals from OS.
 			utils_signal.WaitForProcessInterruption(func() {

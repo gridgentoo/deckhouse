@@ -1,0 +1,17 @@
+spec:
+  versions:
+    - name: v1alpha1
+      schema:
+        openAPIV3Schema:
+          description: |
+            Определяет конфигурацию модуля Deckhouse.
+          properties:
+            enabled:
+              description: |
+                Включить или выключить модуль.
+            configVersion:
+              description: |
+                Версия конфигурации модуля.
+            configValues:
+              description: |
+                Конфигурации модуля.

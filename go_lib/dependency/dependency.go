@@ -24,6 +24,7 @@ import (
 	"sync"
 	"testing"
 
+	addon_operator "github.com/flant/addon-operator/pkg/addon-operator"
 	"github.com/flant/addon-operator/pkg/module_manager/go_hook"
 	"github.com/flant/kube-client/fake"
 	"github.com/gojuno/minimock/v3"
@@ -44,21 +45,28 @@ type Container interface {
 	MustGetK8sClient(options ...k8s.Option) k8s.Client
 	GetRegistryClient(repo string, options ...cr.Option) (cr.Client, error)
 	GetVsphereClient(config *vsphere.ProviderClusterConfiguration) (vsphere.Client, error)
+	GetAddonOperator() *addon_operator.AddonOperator
 }
 
+var _ Container = &mockedDependencyContainer{}
+var _ Container = &dependencyContainer{}
+
 var (
-	defaultDC Container
+	defaultDC *dependencyContainer
 	TestDC    *mockedDependencyContainer
 )
 
 func init() {
 	TestDC = newMockedContainer()
-	defaultDC = NewDependencyContainer()
+	defaultDC = &dependencyContainer{}
 }
 
-// NewDependencyContainer creates new Dependency container with external clients
 func NewDependencyContainer() Container {
 	return &dependencyContainer{}
+}
+
+func SetAddonOperator(operator *addon_operator.AddonOperator) {
+	defaultDC.addonOperator = operator
 }
 
 type dependencyContainer struct {
@@ -70,6 +78,8 @@ type dependencyContainer struct {
 	m          sync.RWMutex
 	isTestEnv  *bool
 	httpClient http.Client
+
+	addonOperator *addon_operator.AddonOperator
 }
 
 func (dc *dependencyContainer) isTestEnvironment() bool {
@@ -195,6 +205,14 @@ func (dc *dependencyContainer) GetVsphereClient(config *vsphere.ProviderClusterC
 	return client, nil
 }
 
+func (dc *dependencyContainer) GetAddonOperator() *addon_operator.AddonOperator {
+	if dc.isTestEnvironment() {
+		return TestDC.GetAddonOperator()
+	}
+
+	return dc.addonOperator
+}
+
 // WithExternalDependencies decorate function with external dependencies
 func WithExternalDependencies(f func(input *go_hook.HookInput, dc Container) error) func(input *go_hook.HookInput) error {
 	return func(input *go_hook.HookInput) error {
@@ -211,6 +229,7 @@ type mockedDependencyContainer struct {
 	K8sClient     k8s.Client
 	CRClient      *cr.ClientMock
 	VsphereClient *vsphere.ClientMock
+	AddonOperator *addon_operator.AddonOperator
 }
 
 func (mdc *mockedDependencyContainer) GetHTTPClient(options ...http.Option) http.Client {
@@ -255,6 +274,15 @@ func (mdc *mockedDependencyContainer) GetVsphereClient(config *vsphere.ProviderC
 func (mdc *mockedDependencyContainer) SetK8sVersion(ver k8s.FakeClusterVersion) {
 	cli := fake.NewFakeCluster(ver).Client
 	mdc.K8sClient = cli
+}
+
+// SetK8sVersion change FakeCluster versions. KubeClient returns with resources of specified version
+func (mdc *mockedDependencyContainer) SetAddonOperator(operator *addon_operator.AddonOperator) {
+	mdc.AddonOperator = operator
+}
+
+func (mdc *mockedDependencyContainer) GetAddonOperator() *addon_operator.AddonOperator {
+	return mdc.AddonOperator
 }
 
 func newMockedContainer() *mockedDependencyContainer {

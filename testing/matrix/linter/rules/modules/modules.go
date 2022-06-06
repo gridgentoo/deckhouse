@@ -142,7 +142,7 @@ func helmignoreModuleRule(name, path string) errors.LintRuleError {
 	return errors.EmptyRuleError
 }
 
-func GetDeckhouseModulesWithValuesMatrixTests() ([]utils.Module, error) {
+func GetDeckhouseModulesWithValuesMatrixTests(focusNames map[string]struct{}) ([]utils.Module, error) {
 	var modules []utils.Module
 
 	var possibleModulesPaths []string
@@ -159,6 +159,7 @@ func GetDeckhouseModulesWithValuesMatrixTests() ([]utils.Module, error) {
 
 	var modulesPaths []string
 	for _, possibleModuleDir := range possibleModulesPaths {
+
 		result, err := getModulePaths(possibleModuleDir)
 		if err != nil {
 			return modules, fmt.Errorf("search modules with %q: %v", ChartConfigFilename, err)
@@ -167,8 +168,16 @@ func GetDeckhouseModulesWithValuesMatrixTests() ([]utils.Module, error) {
 		modulesPaths = append(modulesPaths, result...)
 	}
 
+	hasFocusNames := len(focusNames) > 0
 	var lintRuleErrorsList errors.LintRuleErrorsList
 	for _, modulePath := range modulesPaths {
+		moduleName := filepath.Base(modulePath)
+		moduleName = strings.TrimLeft(moduleName, "1234567890-")
+		_, focused := focusNames[moduleName]
+		if hasFocusNames && !focused {
+			continue
+		}
+
 		module, ok := lintModuleStructure(&lintRuleErrorsList, modulePath)
 		if !ok {
 			continue

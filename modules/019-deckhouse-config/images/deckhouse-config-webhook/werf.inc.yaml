@@ -1,0 +1,82 @@
+---
+image: {{ $.ModuleName }}/{{ $.ImageName }}
+from: {{ .Images.BASE_ALPINE }}
+#from: { { .BaseAlpine }}
+git:
+  - add: /
+    to: /deckhouse
+    includePaths:
+      - modules/*/openapi
+      - global-hooks/openapi
+import:
+  - artifact: {{ $.ModuleName }}/{{ $.ImageName }}-artifact
+    add: /src/deckhouse-config-webhook
+    to: /deckhouse-config-webhook
+    before: setup
+docker:
+  ENTRYPOINT: ["/deckhouse-config-webhook"]
+---
+artifact: {{ .ModuleName }}/{{ .ImageName }}-artifact
+from: {{ .Images.BASE_GOLANG_16_ALPINE }}
+# from: { { .BaseGolang16Alpine }}
+shell:
+  beforeInstall:
+    #- apk add --no-cache git
+  install:
+    #- cd /src
+    - cd /deckhouse/modules/019-deckhouse-config/images/deckhouse-config-webhook
+    - go mod download
+  setup:
+    #- cd /src
+    - ls -la /deckhouse
+    - ls -la /deckhouse/modules
+    - ls -la /deckhouse/modules/019-deckhouse-config
+    - ls -la /deckhouse/modules/019-deckhouse-config/images/deckhouse-config-webhook
+    - cd /deckhouse/modules/019-deckhouse-config/images/deckhouse-config-webhook
+    - GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-s -w" -o deckhouse-config-webhook
+    - mkdir /src
+    - mv deckhouse-config-webhook /src
+    - ls -la /deckhouse
+    - go version /src/deckhouse-config-webhook
+
+git:
+- add: /modules/019-{{ .ModuleName }}/images/{{ .ImageName }}
+  #to: /src
+  to: /deckhouse/modules/019-deckhouse-config/images/deckhouse-config-webhook
+  excludePaths:
+    - "**/*.md"
+    - "**/*.yaml"
+    - hack
+  stageDependencies:
+    install:
+      - go.mod
+      - go.sum
+    setup:
+      - "**/*.go"
+- add: /
+  to: /deckhouse
+  includePaths:
+    - dhctl/go.mod
+    - dhctl/go.sum
+    - go_lib
+    - go.mod
+    - go.sum
+    - modules/*/config-values-conversion/**/*.go
+  excludePaths:
+    - modules/019-{{ .ModuleName }}/images/{{ .ImageName }}
+  stageDependencies:
+    install:
+      - dhctl/go.mod
+      - dhctl/go.sum
+      - go.mod
+      - go.sum
+    setup:
+      - go_lib/**/*.go
+      - modules/*/config-values-conversion/**/*.go
+#- add: /modules
+#  to: /available_conversions
+#  includePaths:
+#  - '*/webhooks/'
+mount:
+  - fromPath: ~/go-pkg-cache
+    to: /go/pkg

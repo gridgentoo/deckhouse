@@ -1,0 +1,37 @@
+x-extend:
+  schema: config-values.yaml
+type: object
+properties:
+  internal:
+    type: object
+    default: {}
+    x-required-for-helm:
+    - webhookCert
+    properties:
+      possibleNames:
+        type: array
+        items:
+          type: string
+        default: []
+        description: |
+          A list of module names from modules directory.
+
+      webhookCert:
+        type: object
+        default: {}
+        x-required-for-helm:
+          - cert
+          - key
+          - ca
+        properties:
+          cert:
+            type: string
+            x-examples: ["YjY0ZW5jX3N0cmluZwo="]
+          key:
+            type: string
+            x-examples: ["YjY0ZW5jX3N0cmluZwo="]
+          ca:
+            type: string
+            x-examples: ["YjY0ZW5jX3N0cmluZwo="]
+        description: |
+          Certificates for module config validation webhook.

@@ -100,9 +100,13 @@ func prometheusDisk(input *go_hook.HookInput) error {
 		pvc := obj.(PersistentVolumeClaim)
 		switch pvc.PrometheusName {
 		case "main":
-			main.VolumeSizeGiB = pvc.RequestsStorage
+			if main.VolumeSizeGiB < pvc.RequestsStorage {
+				main.VolumeSizeGiB = pvc.RequestsStorage
+			}
 		case "longterm":
-			longterm.VolumeSizeGiB = pvc.RequestsStorage
+			if longterm.VolumeSizeGiB < pvc.RequestsStorage {
+				longterm.VolumeSizeGiB = pvc.RequestsStorage
+			}
 		default:
 			continue
 		}

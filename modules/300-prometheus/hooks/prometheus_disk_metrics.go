@@ -22,6 +22,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/deckhouse/deckhouse/go_lib/dependency"
 	"github.com/deckhouse/deckhouse/go_lib/dependency/k8s"
 	"github.com/flant/addon-operator/pkg/module_manager/go_hook"
 	"github.com/flant/addon-operator/pkg/module_manager/go_hook/metrics"
@@ -33,8 +34,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/remotecommand"
-
-	"github.com/deckhouse/deckhouse/go_lib/dependency"
 )
 
 var _ = sdk.RegisterFunc(&go_hook.HookConfig{
@@ -152,9 +151,9 @@ func getFsInfo(input *go_hook.HookInput, kubeClient k8s.Client, pod PodFilter) (
 	} else {
 		for _, s := range strings.Split(output, "\n") {
 			if strings.Contains(s, "prometheus") {
-				fsSize, _ = strconv.ParseFloat(strings.Fields(s)[1],64)
-				fsUsed, _ = strconv.ParseFloat(strings.Fields(s)[2],64)
-				fsUsePercent, _ = strconv.ParseFloat(strings.Trim(strings.Fields(s)[4], "%"),64)
+				fsSize, _ = strconv.ParseFloat(strings.Fields(s)[1], 64)
+				fsUsed, _ = strconv.ParseFloat(strings.Fields(s)[2], 64)
+				fsUsePercent, _ = strconv.ParseFloat(strings.Trim(strings.Fields(s)[4], "%"), 64)
 				break
 			}
 		}

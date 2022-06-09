@@ -1,6 +1,10 @@
 properties:
   retentionDays:
     description: Сколько дней хранить данные.
+  retentionPercent:
+    description: |
+      Сколько процентов дискового пространства использовать для хранения данных.
+    default: 80
   storageClass:
     description: |
       Имя storageClass'а, который использовать.

@@ -8,6 +8,7 @@ properties:
     type: integer
     minimum: 0
     maximum: 100
+    default: 80
     description: The maximum percentage of disk space used for data storage.
   storageClass:
     type: string

@@ -2,7 +2,7 @@
   rules:
   - alert: PrometheusDiskUsage
     expr: |
-      d8_prometheus_fs_use_percent > 90
+      d8_prometheus_fs_use_percent > 95
     labels:
       tier: cluster
       severity_level: "4"
@@ -10,7 +10,7 @@
       plk_markup_format: markdown
       plk_protocol_version: "1"
       plk_pending_until_firing_for: "10m"
-      summary: Prometheus disk is over 90% used.
+      summary: Prometheus disk is over 95% used.
       description: |
         For more information, use the command:
         ```shell

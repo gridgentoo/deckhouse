@@ -6,8 +6,8 @@ properties:
     description: How long to keep the data.
   retentionPercent:
     type: integer
-    minimum: 0
-    maximum: 100
+    minimum: 1
+    maximum: 99
     default: 80
     description: The maximum percentage of disk space used for data storage.
   storageClass:
@@ -39,8 +39,9 @@ properties:
       Setting this parameter to `0` will result in Longterm Prometheus not running in the cluster.
   longtermRetentionPercent:
     type: integer
-    minimum: 0
-    maximum: 100
+    minimum: 1
+    maximum: 99
+    default: 80
     description: The maximum percentage of disk space used for data storage in longterm Prometheus.
   auth:
     type: object

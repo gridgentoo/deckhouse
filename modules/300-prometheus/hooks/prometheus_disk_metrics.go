@@ -100,19 +100,18 @@ func prometheusDiskMetrics(input *go_hook.HookInput, dc dependency.Container) er
 		return err
 	}
 
-	pods := input.Snapshots["pods"]
-	for _, obj := range pods {
+	for _, obj := range input.Snapshots["pods"] {
 		pod := obj.(PodFilter)
 
 		if !pod.PrometheusContainerReady {
 			continue
 		}
 
-		fsSize, fsUsed, fsUsePercent := getFsInfo(input, kubeClient, pod)
+		fsSizeBytes, fsUsedBytes, fsUsedPercent := getFsInfo(input, kubeClient, pod)
 
 		input.MetricsCollector.Set(
-			"d8_prometheus_fs_size",
-			fsSize,
+			"d8_prometheus_fs_size_bytes",
+			fsSizeBytes,
 			map[string]string{
 				"namespace": pod.Namespace,
 				"pod_name":  pod.Name,
@@ -121,8 +120,8 @@ func prometheusDiskMetrics(input *go_hook.HookInput, dc dependency.Container) er
 		)
 
 		input.MetricsCollector.Set(
-			"d8_prometheus_fs_used",
-			fsUsed,
+			"d8_prometheus_fs_used_bytes",
+			fsUsedBytes,
 			map[string]string{
 				"namespace": pod.Namespace,
 				"pod_name":  pod.Name,
@@ -131,8 +130,8 @@ func prometheusDiskMetrics(input *go_hook.HookInput, dc dependency.Container) er
 		)
 
 		input.MetricsCollector.Set(
-			"d8_prometheus_fs_use_percent",
-			fsUsePercent,
+			"d8_prometheus_fs_used_percent",
+			fsUsedPercent,
 			map[string]string{
 				"namespace": pod.Namespace,
 				"pod_name":  pod.Name,
@@ -143,7 +142,7 @@ func prometheusDiskMetrics(input *go_hook.HookInput, dc dependency.Container) er
 	return nil
 }
 
-func getFsInfo(input *go_hook.HookInput, kubeClient k8s.Client, pod PodFilter) (fsSize, fsUsed, fsUsePercent float64) {
+func getFsInfo(input *go_hook.HookInput, kubeClient k8s.Client, pod PodFilter) (fsSizeBytes, fsUsedBytes, fsUsedPercent float64) {
 	containerName := "prometheus"
 	command := "df -PB1 /prometheus/"
 	output, _, err := execToPodThroughAPI(kubeClient, command, containerName, pod.Name, pod.Namespace)
@@ -152,9 +151,9 @@ func getFsInfo(input *go_hook.HookInput, kubeClient k8s.Client, pod PodFilter) (
 	} else {
 		for _, s := range strings.Split(output, "\n") {
 			if strings.Contains(s, "prometheus") {
-				fsSize, _ = strconv.ParseFloat(strings.Fields(s)[1], 64)
-				fsUsed, _ = strconv.ParseFloat(strings.Fields(s)[2], 64)
-				fsUsePercent, _ = strconv.ParseFloat(strings.Trim(strings.Fields(s)[4], "%"), 64)
+				fsSizeBytes, _ = strconv.ParseFloat(strings.Fields(s)[1], 64)
+				fsUsedBytes, _ = strconv.ParseFloat(strings.Fields(s)[2], 64)
+				fsUsedPercent, _ = strconv.ParseFloat(strings.Trim(strings.Fields(s)[4], "%"), 64)
 				break
 			}
 		}

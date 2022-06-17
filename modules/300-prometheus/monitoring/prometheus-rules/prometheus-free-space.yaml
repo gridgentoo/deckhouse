@@ -2,7 +2,7 @@
   rules:
   - alert: PrometheusDiskUsage
     expr: |
-      d8_prometheus_fs_use_percent > 95
+      d8_prometheus_fs_used_percent > 95
     labels:
       tier: cluster
       severity_level: "4"

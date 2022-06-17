@@ -28,10 +28,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
-const (
-	defaultDiskSizeGB           = 40
-	defaultDiskRetentionPercent = 80
-)
+const defaultDiskSizeGB = 40
 
 var _ = sdk.RegisterFunc(&go_hook.HookConfig{
 	OnBeforeHelm: &go_hook.OrderedConfig{Order: 10},
@@ -92,9 +89,9 @@ func prometheusDisk(input *go_hook.HookInput) error {
 	var longterm storage
 
 	main.VolumeSizeGiB = defaultDiskSizeGB
-	main.RetentionPercent = defaultDiskRetentionPercent
+	main.RetentionPercent = int(input.ConfigValues.Get("prometheus.retentionPercent").Int())
 	longterm.VolumeSizeGiB = defaultDiskSizeGB
-	longterm.RetentionPercent = defaultDiskRetentionPercent
+	longterm.RetentionPercent = int(input.ConfigValues.Get("prometheus.longtermRetentionPercent").Int())
 
 	for _, obj := range input.Snapshots["pvcs"] {
 		pvc := obj.(PersistentVolumeClaim)
@@ -112,22 +109,6 @@ func prometheusDisk(input *go_hook.HookInput) error {
 		}
 	}
 
-	if input.ConfigValues.Exists("prometheus.diskRetentionPercent") {
-		main.RetentionPercent = int(input.ConfigValues.Get("prometheus.retentionPercent").Int())
-	}
-
-	if input.ConfigValues.Exists("prometheus.diskRetentionPercent") {
-		longterm.RetentionPercent = int(input.ConfigValues.Get("prometheus.longtermRetentionPercent").Int())
-	}
-
-	if main.RetentionPercent == 0 {
-		main.RetentionPercent = defaultDiskRetentionPercent
-	}
-
-	if longterm.RetentionPercent == 0 {
-		longterm.RetentionPercent = defaultDiskRetentionPercent
-	}
-
 	main.RetentionSizeGiB = int(math.Round(float64(main.VolumeSizeGiB) * float64(main.RetentionPercent) / 100.0))
 	longterm.RetentionSizeGiB = int(math.Round(float64(longterm.VolumeSizeGiB) * float64(longterm.RetentionPercent) / 100.0))
 
@@ -137,7 +118,7 @@ func prometheusDisk(input *go_hook.HookInput) error {
 	input.Values.Set("prometheus.internal.prometheusLongterm.diskSizeGigabytes", longterm.VolumeSizeGiB)
 	input.Values.Set("prometheus.internal.prometheusLongterm.retentionGigabytes", longterm.RetentionSizeGiB)
 
-	// remove unnecessary parameters from configmap to further remove them from the openapi spec
+	// remove deprecated parameters from configmap to further remove them from the openapi spec
 
 	if input.ConfigValues.Exists("prometheus.mainMaxDiskSizeGigabytes") {
 		input.ConfigValues.Remove("prometheus.mainMaxDiskSizeGigabytes")

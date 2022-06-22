@@ -23,7 +23,7 @@ import (
 	. "github.com/deckhouse/deckhouse/testing/hooks"
 )
 
-var _ = FDescribe("Modules :: prometheus :: hooks :: prometheus_disk ::", func() {
+var _ = Describe("Modules :: prometheus :: hooks :: prometheus_disk ::", func() {
 	const (
 		pvcs = `
 ---
@@ -85,7 +85,7 @@ spec:
 `
 	)
 
-	f := HookExecutionConfigInit(`{"prometheus": {"internal":{"prometheusMain":{}, "prometheusLongterm":{} }}}`, `{}`)
+	f := HookExecutionConfigInit(`{"prometheus": {"internal":{"prometheusMain":{}, "prometheusLongterm":{} }, "retentionPercent": 80, "longtermRetentionPercent": 80}}`, `{}`)
 	f.RegisterCRD("monitoring.coreos.com", "v1", "Prometheus", true)
 
 	Context("Empty cluster", func() {

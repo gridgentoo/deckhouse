@@ -109,8 +109,8 @@ func prometheusDisk(input *go_hook.HookInput) error {
 		}
 	}
 
-	input.LogEntry.Log(1, "main", main.VolumeSizeGiB, main.RetentionPercent)
-	input.LogEntry.Log(3, "longterm", longterm.VolumeSizeGiB, longterm.RetentionPercent)
+	input.LogEntry.Log(3, "main: ", main.VolumeSizeGiB, main.RetentionPercent)
+	input.LogEntry.Log(3, "longterm: ", longterm.VolumeSizeGiB, longterm.RetentionPercent)
 
 	main.RetentionSizeGiB = int(math.Round(float64(main.VolumeSizeGiB) * float64(main.RetentionPercent) / 100.0))
 	longterm.RetentionSizeGiB = int(math.Round(float64(longterm.VolumeSizeGiB) * float64(longterm.RetentionPercent) / 100.0))

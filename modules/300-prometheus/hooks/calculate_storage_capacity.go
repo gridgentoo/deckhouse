@@ -32,7 +32,7 @@ const defaultDiskSizeGB = 40
 
 var _ = sdk.RegisterFunc(&go_hook.HookConfig{
 	OnBeforeHelm: &go_hook.OrderedConfig{Order: 10},
-	Queue:        "/modules/prometheus/prometheus_disk",
+	Queue:        "/modules/prometheus/calculate_storage_capacity",
 	Kubernetes: []go_hook.KubernetesConfig{
 		{
 			Name:       "pvcs",

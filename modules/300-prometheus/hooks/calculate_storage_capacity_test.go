@@ -23,7 +23,7 @@ import (
 	. "github.com/deckhouse/deckhouse/testing/hooks"
 )
 
-var _ = Describe("Modules :: prometheus :: hooks :: prometheus_disk ::", func() {
+var _ = Describe("Modules :: prometheus :: hooks :: calculate_storage_capacity ::", func() {
 	const (
 		pvcs = `
 ---

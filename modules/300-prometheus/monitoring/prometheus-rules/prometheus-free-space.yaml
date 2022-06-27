@@ -16,3 +16,4 @@
         ```shell
         kubectl -n {{ $labels.namespace }} exec -ti {{ $labels.pod_name }} -c prometheus -- df -PBG /prometheus
         ```
+        Consider increasing it https://deckhouse.io/en/documentation/v1/modules/300-prometheus/faq.html#how-to-expand-disk-size

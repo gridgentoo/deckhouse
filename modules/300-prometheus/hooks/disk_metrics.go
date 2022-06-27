@@ -39,7 +39,7 @@ import (
 
 var _ = sdk.RegisterFunc(&go_hook.HookConfig{
 	OnBeforeHelm: &go_hook.OrderedConfig{Order: 10},
-	Queue:        "/modules/prometheus/prometheus_disk_metrics",
+	Queue:        "/modules/prometheus/disk_metrics",
 	Schedule: []go_hook.ScheduleConfig{
 		{
 			Name:    "main",

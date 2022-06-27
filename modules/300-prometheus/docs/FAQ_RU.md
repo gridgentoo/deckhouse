@@ -457,7 +457,6 @@ spec:
     - port: web
 ```
 
-
 ## Как увеличить размер диска
 
 1. Для увеличения размера отредактируйте PersistentVolumeClaim, указав новый размер в поле `spec.resources.requests.storage`.

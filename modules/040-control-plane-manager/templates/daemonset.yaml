@@ -4,10 +4,10 @@
 {{- $images := dict }}
 {{- range $component := list "kubeApiserver" "kubeControllerManager" "kubeScheduler" }}
   {{- $componentWithSuffix := printf "%s%s" $component $kubeImageTagSuffix }}
-  {{- $_ := set $images $componentWithSuffix (get $.Values.global.modulesImages.tags.controlPlaneManager $componentWithSuffix) }}
+  {{- $_ := set $images $componentWithSuffix (include "helm_lib_module_image" (list $ $componentWithSuffix)) }}
 {{- end }}
-{{- $_ := set $images "kubeApiserverHealthcheck" $.Values.global.modulesImages.tags.controlPlaneManager.kubeApiserverHealthcheck }}
-{{- $_ := set $images "etcd" $.Values.global.modulesImages.tags.controlPlaneManager.etcd }}
+{{- $_ := set $images "kubeApiserverHealthcheck" (include "helm_lib_module_image" (list $ "kubeApiserverHealthcheck")) }}
+{{- $_ := set $images "etcd" (include "helm_lib_module_image" (list $ "etcd")) }}
 
 {{- $registry := dict }}
 {{- $_ := set $registry "address" $.Values.global.modulesImages.registryAddress }}
@@ -171,7 +171,7 @@ spec:
       containers:
       - name: control-plane-manager
         {{- include "helm_lib_module_container_security_context_read_only_root_filesystem_capabilities_drop_all_and_add" (list . (list "SYS_CHROOT")) | nindent 8 }}
-        image: "{{ .Values.global.modulesImages.registry }}:{{ index .Values.global.modulesImages.tags.controlPlaneManager (printf "controlPlaneManager%s" $kubeImageTagSuffix) }}"
+        image: {{ include "helm_lib_module_image" (list . (printf "controlPlaneManager%s" $kubeImageTagSuffix)) }}
         volumeMounts:
         - mountPath: /var/lib/etcd
           name: etcd
@@ -213,7 +213,7 @@ spec:
             {{- include "helm_lib_module_ephemeral_storage_logs_with_extra" 50 | nindent 12 }}
 {{- range $name, $imageTag := $images }}
       - name: image-holder-{{ $name | kebabcase }}
-        image: "{{ $.Values.global.modulesImages.registry }}:{{ $imageTag }}"
+        image: {{ $imageTag }}
         command:
         - /pause
 {{- end }}

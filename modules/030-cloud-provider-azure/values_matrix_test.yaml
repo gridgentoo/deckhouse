@@ -16,23 +16,11 @@ global:
       - ["vertical-pod-autoscaler-crd"]
       - ["priority-class"]
   modulesImages:
-    registry: registry.deckhouse.io
+    registry: registry.deckhouse.io/deckhouse/fe
     registryDockercfg: Y2ZnCg==
     tags:
-      common:
-        csiExternalProvisioner116: imagehash
-        csiExternalAttacher116: imagehash
-        csiExternalProvisioner119: imagehash
-        csiExternalAttacher119: imagehash
-        csiExternalResizer: imagehash
-        csiNodeDriverRegistrar: imagehash
-      cloudProviderAzure:
-        csiNodeDriverRegistrar: imagehash
-        simpleBridge: imagehash
-        cloudControllerManager: imagehash
-        pdCsiPlugin: imagehash
-        livenessprobe: imagehash
-        azurediskCsi: imagehash
+      cloudProviderAzure: {}
+      common: {}
   discovery:
     d8SpecificNodeCountByRole:
       worker: 1

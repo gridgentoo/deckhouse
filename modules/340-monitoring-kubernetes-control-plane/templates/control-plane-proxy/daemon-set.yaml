@@ -55,7 +55,7 @@ spec:
       {{- $metricsPath := $component.values.metricsPath }}
 
       - name: {{ $component.name | kebabcase }}
-        image: "{{ $context.Values.global.modulesImages.registry }}:{{ $context.Values.global.modulesImages.tags.monitoringKubernetesControlPlane.proxy }}"
+        image: {{ include "helm_lib_module_image" (list $context "proxy") }}
         args:
         - {{ printf "--listen=$(MY_POD_IP):%s" $proxyListenPort | quote}}
         - {{ printf "--proxy-pass=http://127.0.0.1:%s%s" $localPort $metricsPath | quote }}
@@ -89,7 +89,7 @@ spec:
       {{- $metricsPath := $component.values.metricsPath }}
 
       - name: {{ $component.name | kebabcase }}
-        image: "{{ $context.Values.global.modulesImages.registry }}:{{ $context.Values.global.modulesImages.tags.monitoringKubernetesControlPlane.proxy }}"
+        image: {{ include "helm_lib_module_image" (list $context "proxy") }}
         args:
         - {{ printf "--listen=$(MY_POD_IP):%s" $proxyListenPort | quote }}
         - {{ printf "--proxy-pass=%s://127.0.0.1:%s%s" $scheme $localPort $metricsPath | quote }}
@@ -122,7 +122,7 @@ spec:
       {{- $metricsPath := $component.values.metricsPath }}
 
       - name: {{ $component.name | kebabcase }}
-        image: "{{ $context.Values.global.modulesImages.registry }}:{{ $context.Values.global.modulesImages.tags.monitoringKubernetesControlPlane.proxy }}"
+        image: {{ include "helm_lib_module_image" (list $context "proxy") }}
         args:
         - {{ printf "--listen=$(MY_POD_IP):%s" $proxyListenPort | quote }}
         - {{ printf "--proxy-pass=%s://127.0.0.1:%s%s" $scheme $localPort $metricsPath | quote }}
@@ -155,7 +155,7 @@ spec:
       {{- $metricsPath := $component.values.metricsPath }}
 
       - name: {{ $component.name | kebabcase }}
-        image: "{{ $context.Values.global.modulesImages.registry }}:{{ $context.Values.global.modulesImages.tags.monitoringKubernetesControlPlane.proxy }}"
+        image: {{ include "helm_lib_module_image" (list $context "proxy") }}
         args:
         - {{ printf "--listen=$(MY_POD_IP):%s" $proxyListenPort | quote }}
         - {{ printf "--proxy-pass=%s://127.0.0.1:%s%s" $scheme $localPort $metricsPath | quote }}

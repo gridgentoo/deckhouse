@@ -1,0 +1,41 @@
+- name: d8.prometheus.storage
+  rules:
+  - alert: PrometheusDiskUsage
+    expr: |
+      d8_prometheus_fs_used_percent > 95
+    labels:
+      tier: cluster
+      severity_level: "4"
+    annotations:
+      plk_markup_format: markdown
+      plk_protocol_version: "1"
+      plk_pending_until_firing_for: "10m"
+      summary: Prometheus disk is over 95% used.
+      description: |
+        For more information, use the command:
+        ```shell
+        kubectl -n {{ $labels.namespace }} exec -ti {{ $labels.pod_name }} -c prometheus -- df -PBG /prometheus
+        ```
+        Consider increasing it https://deckhouse.io/en/documentation/v1/modules/300-prometheus/faq.html#how-to-expand-disk-size
+  - alert: PrometheusMainRetainLessThan10Days
+    expr: |
+      (time() - prometheus_tsdb_lowest_timestamp_seconds{service="prometheus"}) / 60 / 60 / 24 < 10
+    labels:
+      tier: cluster
+      severity_level: "4"
+    annotations:
+      plk_markup_format: markdown
+      plk_protocol_version: "1"
+      plk_pending_until_firing_for: "10m"
+      summary: Prometheus-main data is retained for less than 10 days
+  - alert: PrometheusLongtermRetainLessThan30Days
+    expr: |
+      (time() - prometheus_tsdb_lowest_timestamp_seconds{service="prometheus-longterm"}) / 60 / 60 / 24 < 30
+    labels:
+      tier: cluster
+      severity_level: "4"
+    annotations:
+      plk_markup_format: markdown
+      plk_protocol_version: "1"
+      plk_pending_until_firing_for: "10m"
+      summary: Prometheus-longterm data is retained for less than 30 days

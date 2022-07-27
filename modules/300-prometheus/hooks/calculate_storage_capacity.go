@@ -28,7 +28,9 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
-const defaultDiskSizeGB = 40
+const defaultDiskSizeGiB = 40
+const retentionPercent = 80
+const maxFreeSpaceGiB = 50
 
 var _ = sdk.RegisterFunc(&go_hook.HookConfig{
 	OnBeforeHelm: &go_hook.OrderedConfig{Order: 10},
@@ -81,17 +83,14 @@ func persistentVolumeClaimFilter(obj *unstructured.Unstructured) (go_hook.Filter
 type storage struct {
 	VolumeSizeGiB    int
 	RetentionSizeGiB int
-	RetentionPercent int
 }
 
 func prometheusDisk(input *go_hook.HookInput) error {
 	var main storage
 	var longterm storage
 
-	main.VolumeSizeGiB = defaultDiskSizeGB
-	main.RetentionPercent = int(input.Values.Get("prometheus.retentionPercent").Int())
-	longterm.VolumeSizeGiB = defaultDiskSizeGB
-	longterm.RetentionPercent = int(input.Values.Get("prometheus.longtermRetentionPercent").Int())
+	main.VolumeSizeGiB = defaultDiskSizeGiB
+	longterm.VolumeSizeGiB = defaultDiskSizeGiB
 
 	for _, obj := range input.Snapshots["pvcs"] {
 		pvc := obj.(PersistentVolumeClaim)
@@ -109,11 +108,15 @@ func prometheusDisk(input *go_hook.HookInput) error {
 		}
 	}
 
-	input.LogEntry.Log(3, "main: ", main.VolumeSizeGiB, main.RetentionPercent)
-	input.LogEntry.Log(3, "longterm: ", longterm.VolumeSizeGiB, longterm.RetentionPercent)
+	main.RetentionSizeGiB = int(math.Round(float64(main.VolumeSizeGiB) * float64(retentionPercent) / 100.0))
+	if main.VolumeSizeGiB - main.RetentionSizeGiB > maxFreeSpaceGiB {
+		main.RetentionSizeGiB = main.VolumeSizeGiB - maxFreeSpaceGiB
+	}
 
-	main.RetentionSizeGiB = int(math.Round(float64(main.VolumeSizeGiB) * float64(main.RetentionPercent) / 100.0))
-	longterm.RetentionSizeGiB = int(math.Round(float64(longterm.VolumeSizeGiB) * float64(longterm.RetentionPercent) / 100.0))
+	longterm.RetentionSizeGiB = int(math.Round(float64(longterm.VolumeSizeGiB) * float64(retentionPercent) / 100.0))
+	if longterm.VolumeSizeGiB - longterm.RetentionSizeGiB > maxFreeSpaceGiB {
+		longterm.RetentionSizeGiB = longterm.VolumeSizeGiB - maxFreeSpaceGiB
+	}
 
 	input.Values.Set("prometheus.internal.prometheusMain.diskSizeGigabytes", main.VolumeSizeGiB)
 	input.Values.Set("prometheus.internal.prometheusMain.retentionGigabytes", main.RetentionSizeGiB)
@@ -133,3 +136,4 @@ func prometheusDisk(input *go_hook.HookInput) error {
 
 	return nil
 }
+

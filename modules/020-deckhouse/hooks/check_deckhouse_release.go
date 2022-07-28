@@ -247,8 +247,13 @@ func sendWebhookNotification(webhookURL string, data webhookData) {
 		Transport: tr,
 		Timeout:   10 * time.Second,
 	}
+
+	fmt.Println("D", data)
+
 	buf := bytes.NewBuffer(nil)
 	_ = json.NewEncoder(buf).Encode(data)
+
+	fmt.Println("B", buf.String())
 
 	_, err := client.Post(webhookURL, "application/json", buf)
 	if err != nil {

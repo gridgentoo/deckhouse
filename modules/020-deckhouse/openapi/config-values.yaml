@@ -93,6 +93,10 @@ properties:
                   - Fri
                   - Sat
                   - Sun
+      webhook:
+        type: string
+        pattern: "^https?://[^\\s/$.?#].[^\\s]*$"
+        description: "URL for external webhook handler"
   nodeSelector:
     type: object
     additionalProperties:

@@ -19,9 +19,11 @@ package hooks
 import (
 	"archive/tar"
 	"bytes"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
+	"net/http"
 	"path"
 	"sort"
 	"strings"
@@ -216,7 +218,43 @@ releaseLoop:
 
 	input.PatchCollector.Create(release, object_patch.IgnoreIfExists())
 
+	if v, ok := input.Values.GetOk("deckhouse.update.webhook"); ok {
+		webhookURL := v.String()
+		data := webhookData{
+			Version:       release.Spec.Version,
+			Requirements:  release.Spec.Requirements,
+			Changelog:     release.Spec.Changelog,
+			ChangelogLink: release.Spec.ChangelogLink,
+		}
+		go sendWebhookNotification(webhookURL, data)
+	}
+
 	return nil
+}
+
+type webhookData struct {
+	Version       string                 `json:"version"`
+	Requirements  map[string]string      `json:"requirements"`
+	Changelog     map[string]interface{} `json:"changelog"`
+	ChangelogLink string                 `json:"changelogLink"`
+}
+
+func sendWebhookNotification(webhookURL string, data webhookData) {
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	client := &http.Client{
+		Transport: tr,
+		Timeout:   10 * time.Second,
+	}
+	buf := bytes.NewBuffer(nil)
+	_ = json.NewEncoder(buf).Encode(data)
+
+	_, err := client.Post(webhookURL, "application/json", buf)
+	if err != nil {
+		fmt.Println(err)
+		// TODO: logger
+	}
 }
 
 var globalModules = []string{"candi", "deckhouse-controller", "global"}

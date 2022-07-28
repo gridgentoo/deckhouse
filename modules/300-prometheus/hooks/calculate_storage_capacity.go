@@ -109,12 +109,12 @@ func prometheusDisk(input *go_hook.HookInput) error {
 	}
 
 	main.RetentionSizeGiB = int(math.Round(float64(main.VolumeSizeGiB) * float64(retentionPercent) / 100.0))
-	if main.VolumeSizeGiB - main.RetentionSizeGiB > maxFreeSpaceGiB {
+	if (main.VolumeSizeGiB - main.RetentionSizeGiB) > maxFreeSpaceGiB {
 		main.RetentionSizeGiB = main.VolumeSizeGiB - maxFreeSpaceGiB
 	}
 
 	longterm.RetentionSizeGiB = int(math.Round(float64(longterm.VolumeSizeGiB) * float64(retentionPercent) / 100.0))
-	if longterm.VolumeSizeGiB - longterm.RetentionSizeGiB > maxFreeSpaceGiB {
+	if (longterm.VolumeSizeGiB - longterm.RetentionSizeGiB) > maxFreeSpaceGiB {
 		longterm.RetentionSizeGiB = longterm.VolumeSizeGiB - maxFreeSpaceGiB
 	}
 
@@ -136,4 +136,3 @@ func prometheusDisk(input *go_hook.HookInput) error {
 
 	return nil
 }
-

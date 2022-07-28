@@ -1,5 +1,5 @@
 /*
-Copyright 2021 Flant JSC
+Copyright 2022 Flant JSC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import (
 	. "github.com/deckhouse/deckhouse/testing/hooks"
 )
 
-var _ = Describe("Modules :: prometheus :: hooks :: generate_password ", func() {
+var _ = Describe("Modules :: dashboard :: hooks :: generate_password", func() {
 	var (
 		hook = generate_password.NewBasicAuthPlainHook(moduleValuesKey, authSecretNS, authSecretName)
 
@@ -56,7 +56,10 @@ data:
   auth: ` + testPasswordB64 + "\n"
 	)
 
-	f := HookExecutionConfigInit(`{"prometheus": {"internal": {"auth": {}}}}`, `{"prometheus":{}}`)
+	f := HookExecutionConfigInit(
+		`{"dashboard": {"internal": {"auth":{}}} }`,
+		`{"dashboard":{}}`,
+	)
 
 	Context("with no auth settings", func() {
 		BeforeEach(func() {
@@ -64,7 +67,6 @@ data:
 			f.BindingContexts.Set(f.GenerateBeforeHelmContext())
 			f.RunHook()
 		})
-
 		It("should generate new password", func() {
 			Expect(f).To(ExecuteSuccessfully())
 			Expect(f.ValuesGet(hook.PasswordInternalKey()).String()).ShouldNot(BeEmpty())
@@ -78,7 +80,6 @@ data:
 			f.ConfigValuesSet(hook.PasswordKey(), testPassword)
 			f.RunHook()
 		})
-
 		It("should set password from configuration", func() {
 			Expect(f).To(ExecuteSuccessfully())
 			Expect(f.ValuesGet(hook.PasswordInternalKey()).String()).Should(BeEquivalentTo(testPassword))
@@ -92,8 +93,7 @@ data:
 			f.ValuesSetFromYaml(hook.ExternalAuthKey(), []byte(`{"authURL": "test"}`))
 			f.RunHook()
 		})
-
-		It("should generate new password", func() {
+		It("should clean password from values", func() {
 			Expect(f).To(ExecuteSuccessfully())
 			Expect(f.ValuesGet(hook.PasswordKey()).String()).Should(BeEmpty())
 			Expect(f.ValuesGet(hook.PasswordInternalKey()).Exists()).Should(BeFalse())
@@ -112,4 +112,5 @@ data:
 			Expect(f.ValuesGet(hook.PasswordInternalKey()).String()).Should(BeEquivalentTo(testPassword))
 		})
 	})
+
 })

@@ -38,7 +38,6 @@ globalVersion: 1.2.3-beta.45 # default version "from openapi/values.yaml"
 			Expect(f).To(ExecuteSuccessfully())
 			Expect(f.LogrusOutput.Contents()).To(HaveLen(0))
 
-			Expect(f.ConfigValuesGet("istio.globalVersion").String()).To(Equal("1.2.3-beta.45"))
 			Expect(f.ValuesGet("istio.internal.revisionsToInstall").String()).To(MatchJSON(`["v1x2x3beta45"]`))
 			Expect(f.ValuesGet("istio.internal.globalRevision").String()).To(Equal("v1x2x3beta45"))
 		})
@@ -81,7 +80,6 @@ spec: {}
 			Expect(f).To(ExecuteSuccessfully())
 			Expect(f.ValuesGet("istio.internal.revisionsToInstall").AsStringSlice()).To(Equal([]string{"v1x10x1"}))
 			Expect(f.ValuesGet("istio.internal.globalRevision").String()).To(Equal("v1x10x1"))
-			Expect(f.ConfigValuesGet("istio.globalVersion").String()).To(Equal("1.10.1"))
 		})
 	})
 
@@ -123,7 +121,6 @@ spec: {}
 			Expect(f).To(ExecuteSuccessfully())
 			Expect(f.ValuesGet("istio.internal.revisionsToInstall").AsStringSlice()).To(Equal([]string{"v1x3"}))
 			Expect(f.ValuesGet("istio.internal.globalRevision").String()).To(Equal("v1x3"))
-			Expect(f.ConfigValuesGet("istio.globalVersion").String()).To(Equal("1.3"))
 		})
 	})
 
@@ -166,7 +163,6 @@ spec: {}
 			Expect(f).To(ExecuteSuccessfully())
 			Expect(f.ValuesGet("istio.internal.revisionsToInstall").AsStringSlice()).To(Equal([]string{"v1x2"}))
 			Expect(f.ValuesGet("istio.internal.globalRevision").String()).To(Equal("v1x2"))
-			Expect(f.ConfigValuesGet("istio.globalVersion").String()).To(Equal("1.2"))
 		})
 	})
 

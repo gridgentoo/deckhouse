@@ -23,7 +23,6 @@ kubernetes:
   - name: endpoints
     apiVersion: v1
     kind: Endpoints
-    queue: "endpoints-config"
     group: main
     executeHookOnEvent: []
     executeHookOnSynchronization: false
@@ -38,7 +37,6 @@ kubernetes:
   - name: cluster_config
     apiVersion: v1
     kind: Secret
-    queue: "cluster-config"
     group: main
     executeHookOnEvent: []
     executeHookOnSynchronization: false
@@ -50,20 +48,20 @@ kubernetes:
       matchNames:
         - d8-cluster-configuration
     jqFilter: '.data."cluster-configuration.yaml" // ""'
-  - name: deckhouse_config
+  - name: custom_tolerations
     apiVersion: v1
     kind: ConfigMap
-    queue: "deckhouse-config"
     group: main
     executeHookOnEvent: []
     executeHookOnSynchronization: false
     keepFullObjectsInMemory: false
     namespace:
       nameSelector:
-        matchNames: ["d8-system"]
+        matchNames: ["d8-cloud-instance-manager"]
     nameSelector:
-      matchNames: ["deckhouse"]
-    jqFilter: '.data.global // ""'
+      matchNames:
+        - d8-deckhouse-custom-tolerations
+    jqFilter: '.data.customTolerationKeys // ""'
 kubernetesValidating:
 - name: nodegroup-policy.deckhouse.io
   group: main
@@ -116,7 +114,8 @@ EOF
   has_missing_taints=0
   taints=$(context::jq -r '.review.request.object.spec.nodeTemplate.taints // []')
   if [[ "$taints" != "[]" ]]; then
-    customTolerationKeys=$(context::jq -e -r '.snapshots.deckhouse_config[0].filterResult' | yq  e '.' -j - | jq -r '.modules.placement.customTolerationKeys | if . == null then empty else .[] end')
+    # customTolerationKeys field in Secret is either a valid base64 encoded json or an empty value.
+    customTolerationKeys=$(context::jq -e -r '.snapshots.custom_tolerations[0].filterResult | @base64d | try (fromjson | .[]) catch empty')
     for taint in $(jq -e -r '.[].key' <<< "$taints"); do
       # Skip 'standart' taints
       if [[ $taint = 'dedicated' || $taint = 'dedicated.deckhouse.io' || $taint = 'node-role.kubernetes.io/master' ]]; then

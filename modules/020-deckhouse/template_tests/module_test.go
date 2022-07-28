@@ -92,6 +92,7 @@ internal:
     key: b
     ca: c
   currentReleaseImageName: test
+  auth: {}
 `
 )
 

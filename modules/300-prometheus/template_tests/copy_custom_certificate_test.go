@@ -67,6 +67,7 @@ internal:
   prometheusScraperTLS:
     certificate: CRTCRTCRT
     key: KEYKEYKEY
+  auth: {}
 `
 
 var _ = Describe("Module :: prometheus :: helm template :: custom-certificate", func() {

@@ -1,4 +1,4 @@
-{{- if .Values.flantIntegration.madisonAuthKey }}
+{{- if .Values.flantIntegration.internal.madisonAuthKey }}
   {{- range $.Values.flantIntegration.internal.madison.backends }}
 {{- if ($.Values.global.enabledModules | has "vertical-pod-autoscaler-crd") }}
 ---

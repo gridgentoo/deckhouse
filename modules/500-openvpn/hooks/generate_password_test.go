@@ -1,5 +1,5 @@
 /*
-Copyright 2021 Flant CJSC
+Copyright 2021 Flant JSC
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -17,38 +17,71 @@ limitations under the License.
 package hooks
 
 import (
+	"encoding/base64"
+	"fmt"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"github.com/deckhouse/deckhouse/go_lib/hooks/generate_password"
 	. "github.com/deckhouse/deckhouse/testing/hooks"
 )
 
 var _ = Describe("Modules :: openvpn :: hooks :: generate_password ", func() {
-	f := HookExecutionConfigInit(`{"openvpn":{"internal":{}, "auth": {}}}`, `{"openvpn":{}}`)
-	Context("without external auth", func() {
+	var (
+		hook = generate_password.NewBasicAuthPlainHook(moduleValuesKey, authSecretNS, authSecretName)
+
+		testPassword    = "t3stPassw0rd"
+		testPasswordB64 = base64.StdEncoding.EncodeToString([]byte(
+			fmt.Sprintf("admin:{PLAIN}%s", testPassword),
+		))
+
+		// Namespace should be created before creating the Secret.
+		nsManifest = `
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ` + authSecretNS + "\n"
+
+		// Secret with password.
+		authSecretManifest = `
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ` + authSecretName + `
+  namespace: ` + authSecretNS + `
+data:
+  auth: ` + testPasswordB64 + "\n"
+	)
+
+	f := HookExecutionConfigInit(
+		`{"openvpn":{"internal":{"auth": {}}}}`,
+		`{"openvpn":{}}`)
+
+	Context("with no auth settings", func() {
 		BeforeEach(func() {
 			f.KubeStateSet("")
 			f.BindingContexts.Set(f.GenerateBeforeHelmContext())
 			f.RunHook()
 		})
-
 		It("should generate new password", func() {
 			Expect(f).To(ExecuteSuccessfully())
-			Expect(f.ConfigValuesGet("openvpn.auth.password").String()).ShouldNot(BeEmpty())
+			Expect(f.ValuesGet(hook.PasswordInternalKey()).String()).ShouldNot(BeEmpty())
 		})
 	})
 
-	Context("with extisting password", func() {
+	Context("with password in configuration", func() {
 		BeforeEach(func() {
 			f.KubeStateSet("")
 			f.BindingContexts.Set(f.GenerateBeforeHelmContext())
-			f.ValuesSet("openvpn.auth.password", "zxczxczxc")
+			f.ConfigValuesSet(hook.PasswordKey(), testPassword)
 			f.RunHook()
 		})
-
-		It("should generate new password", func() {
+		It("should set password from configuration", func() {
 			Expect(f).To(ExecuteSuccessfully())
-			Expect(f.ValuesGet("openvpn.auth.password").String()).Should(BeEquivalentTo("zxczxczxc"))
+			Expect(f.ValuesGet(hook.PasswordInternalKey()).String()).Should(BeEquivalentTo(testPassword))
 		})
 	})
 
@@ -56,14 +89,27 @@ var _ = Describe("Modules :: openvpn :: hooks :: generate_password ", func() {
 		BeforeEach(func() {
 			f.KubeStateSet("")
 			f.BindingContexts.Set(f.GenerateBeforeHelmContext())
-			f.ValuesSetFromYaml("openvpn.auth.externalAuthentication", []byte(`{"authURL": "test"}`))
+			f.ValuesSetFromYaml(hook.ExternalAuthKey(), []byte(`{"authURL": "test"}`))
 			f.RunHook()
 		})
-
-		It("should generate new password", func() {
+		It("should clean password from values", func() {
 			Expect(f).To(ExecuteSuccessfully())
-			Expect(f.ValuesGet("openvpn.auth.password").String()).Should(BeEmpty())
-			Expect(f.ConfigValuesGet("openvpn.auth").Exists()).Should(BeFalse())
+			Expect(f.ValuesGet(hook.PasswordKey()).String()).Should(BeEmpty())
+			Expect(f.ValuesGet(hook.PasswordInternalKey()).Exists()).Should(BeFalse())
 		})
 	})
+
+	Context("with password in Secret", func() {
+		BeforeEach(func() {
+			f.KubeStateSet(nsManifest + authSecretManifest)
+			f.BindingContexts.Set(f.GenerateBeforeHelmContext())
+			f.ValuesSet(hook.PasswordKey(), "not-a-test-password")
+			f.RunHook()
+		})
+		It("should set password from Secret", func() {
+			Expect(f).To(ExecuteSuccessfully())
+			Expect(f.ValuesGet(hook.PasswordInternalKey()).String()).Should(BeEquivalentTo(testPassword))
+		})
+	})
+
 })

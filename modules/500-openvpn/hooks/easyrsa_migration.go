@@ -107,7 +107,8 @@ func applyMigrationSecretFilter(obj *unstructured.Unstructured) (go_hook.FilterR
 
 func migration(input *go_hook.HookInput) error {
 	// We stopped using the disk, so this option is no longer needed. To avoid validation errors, before removing storageClass from the spec, we need to remove it from the config in all existing installations.
-	input.ConfigValues.Remove("openvpn.storageClass")
+	// TODO Move to initial conversion when migrate to DeckhouseConfig objects.
+	// input.ConfigValues.Remove("openvpn.storageClass")
 
 	migrated := false
 

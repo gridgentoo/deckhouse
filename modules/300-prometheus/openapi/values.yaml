@@ -392,3 +392,10 @@ properties:
             type: string
           certificate_updated:
             type: boolean
+      auth:
+        type: object
+        default: {}
+        properties:
+          password:
+            type: string
+            x-examples: ["p4ssw0rd"]

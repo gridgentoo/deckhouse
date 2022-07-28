@@ -17,127 +17,127 @@ limitations under the License.
 package hooks
 
 import (
-	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/flant/addon-operator/pkg/module_manager/go_hook"
 	"github.com/flant/addon-operator/sdk"
+	"github.com/flant/shell-operator/pkg/kube_events_manager/types"
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
 	"github.com/deckhouse/deckhouse/go_lib/pwgen"
 )
 
 var _ = sdk.RegisterFunc(&go_hook.HookConfig{
-	Queue:        "/modules/upmeter/generate_password",
+	Queue: "/modules/upmeter/generate_password",
+	Kubernetes: []go_hook.KubernetesConfig{
+		{
+			Name:       authSecretBinding,
+			ApiVersion: "v1",
+			Kind:       "Secret",
+			NameSelector: &types.NameSelector{
+				MatchNames: authSecretNames,
+			},
+			NamespaceSelector: &types.NamespaceSelector{
+				NameSelector: &types.NameSelector{
+					MatchNames: []string{upmeterNS},
+				},
+			},
+			// Synchronization is redundant because of OnBeforeHelm.
+			ExecuteHookOnSynchronization: go_hook.Bool(false),
+			ExecuteHookOnEvents:          go_hook.Bool(false),
+			FilterFunc:                   filterAuthSecret,
+		},
+	},
+
 	OnBeforeHelm: &go_hook.OrderedConfig{Order: 10},
-}, generatePassword)
+}, restoreOrGeneratePassword)
 
-func generatePassword(input *go_hook.HookInput) error {
-	const rootAuthKey = "upmeter.auth"
+const (
+	upmeterNS         = "d8-upmeter"
+	authSecretField   = "auth"
+	authSecretBinding = "auth-secrets"
+	statusSecretName  = "basic-auth-status"
+	webuiSecretName   = "basic-auth-webui"
 
-	values, config, err := parseValuesAndConfig(rootAuthKey, input)
+	externalAuthValuesTmpl     = "upmeter.auth.%s.externalAuthentication"
+	passwordValuesTmpl         = "upmeter.auth.%s.password"
+	passwordInternalValuesTmpl = "upmeter.internal.auth.%s.password"
+)
+
+var authSecretNames = []string{statusSecretName, webuiSecretName}
+var upmeterApps = map[string]string{
+	statusSecretName: "status",
+	webuiSecretName:  "webui",
+}
+
+type storedPassword struct {
+	SecretName string `json:"name"`
+	Password   string `json:"password,omitempty"`
+}
+
+func filterAuthSecret(obj *unstructured.Unstructured) (go_hook.FilterResult, error) {
+	secret := &v1.Secret{}
+	err := sdk.FromUnstructured(obj, secret)
 	if err != nil {
-		return err
+		return nil, fmt.Errorf("cannot convert secret to struct: %v", err)
 	}
 
-	config.Status = setPassword(config.Status, values.Status)
-	config.Webui = setPassword(config.Webui, values.Webui)
-
-	if config.IsEmpty() {
-		input.ConfigValues.Remove(rootAuthKey)
-		return nil
+	password := string(secret.Data[authSecretField])
+	if password != "" {
+		password = strings.TrimPrefix(password, "auth:{PLAIN}")
 	}
 
-	input.ConfigValues.Set(rootAuthKey, config)
+	return storedPassword{
+		SecretName: secret.GetName(),
+		Password:   password,
+	}, nil
+}
+
+// restoreOrGeneratePassword restores passwords from config values or secrets.
+// If there are no passwords, it generates new.
+func restoreOrGeneratePassword(input *go_hook.HookInput) error {
+	storedPasswords := map[string]string{}
+	for _, snap := range input.Snapshots[authSecretBinding] {
+		storedPassword := snap.(storedPassword)
+		storedPasswords[storedPassword.SecretName] = storedPassword.Password
+	}
+
+	for secretName, appName := range upmeterApps {
+		externalAuthValuesPath := fmt.Sprintf(externalAuthValuesTmpl, appName)
+		passwordValuesPath := fmt.Sprintf(passwordValuesTmpl, appName)
+		passwordInternalValuesPath := fmt.Sprintf(passwordInternalValuesTmpl, appName)
+
+		// Clear password from internal values if an external authentication is enabled.
+		if input.Values.Exists(externalAuthValuesPath) {
+			input.Values.Remove(passwordInternalValuesPath)
+			continue
+		}
+
+		// Try to set password from config values.
+		password, ok := input.ConfigValues.GetOk(passwordValuesPath)
+		if ok {
+			input.Values.Set(passwordInternalValuesPath, password.String())
+			continue
+		}
+
+		// Try to set password from the stored password.
+		if storedPassword, has := storedPasswords[secretName]; has {
+			input.Values.Set(passwordInternalValuesPath, storedPassword)
+			continue
+		}
+
+		// Password is already in values. It should not happen, just a precaution.
+		_, ok = input.Values.GetOk(passwordInternalValuesPath)
+		if ok {
+			continue
+		}
+
+		// No password found for the app, generate new one.
+		newPasswd := pwgen.AlphaNum(20)
+		input.Values.Set(passwordInternalValuesPath, newPasswd)
+	}
+
 	return nil
-}
-
-// setPassword returns config value for an app auth settings. It sets missing password or cleans it
-// up when is not used. Returns nil to clean config.
-func setPassword(config, values *appAuth) *appAuth {
-	// Guard
-	if values == nil {
-		values = &appAuth{}
-	}
-
-	// Remove password if external auth is on
-	if values.External != nil {
-		if config == nil || config.External == nil {
-			// Nothing to remove
-			return config
-		}
-
-		config.Password = ""
-		if config.IsEmpty() {
-			return nil
-		}
-		return config
-	}
-
-	// Avoid changing existing password
-	if values.Password != "" {
-		return config
-	}
-
-	// Set password
-	if config == nil {
-		config = &appAuth{}
-	}
-	config.Password = pwgen.AlphaNum(20)
-	return config
-}
-
-type authValues struct {
-	Status *appAuth `json:"status,omitempty"`
-	Webui  *appAuth `json:"webui,omitempty"`
-}
-
-func (a *authValues) IsEmpty() bool {
-	return a.Webui.IsEmpty() && a.Status.IsEmpty()
-}
-
-type appAuth struct {
-	Password              string        `json:"password,omitempty"`
-	External              *externalAuth `json:"externalAuthentication,omitempty"`
-	AllowedUserGroups     []string      `json:"allowedUserGroups,omitempty"`
-	WhitelistSourceRanges []string      `json:"whitelistSourceRanges,omitempty"`
-}
-
-func (a *appAuth) IsEmpty() bool {
-	if a == nil {
-		return true
-	}
-	return a.Password == "" &&
-		a.External == nil &&
-		len(a.AllowedUserGroups) == 0 &&
-		len(a.WhitelistSourceRanges) == 0
-}
-
-type externalAuth struct {
-	AuthURL       string `json:"authURL"`
-	AuthSignInURL string `json:"authSignInURL"`
-}
-
-func parseValuesAndConfig(rootAuthKey string, input *go_hook.HookInput) (*authValues, *authValues, error) {
-	values, err := parseAuth(rootAuthKey, input.Values)
-	if err != nil {
-		return nil, nil, fmt.Errorf("canot parse values: %v", err)
-	}
-
-	config, err := parseAuth(rootAuthKey, input.ConfigValues)
-	if err != nil {
-		return nil, nil, fmt.Errorf("canot parse config values: %v", err)
-	}
-	return values, config, nil
-}
-
-func parseAuth(rootAuthKey string, values *go_hook.PatchableValues) (*authValues, error) {
-	var data authValues
-	if s, ok := values.GetOk(rootAuthKey); ok {
-		b := []byte(s.String())
-		err := json.Unmarshal(b, &data)
-		if err != nil {
-			return nil, err
-		}
-	}
-	return &data, nil
 }

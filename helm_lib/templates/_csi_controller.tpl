@@ -32,7 +32,7 @@
 
   {{- $provisionerImageName := join "" (list "csiExternalProvisioner" $kubernetesSemVer.Major $kubernetesSemVer.Minor) }}
   {{- $provisionerImageTag := index $context.Values.global.modulesImages.tags.common $provisionerImageName }}
-  {{- $provisionerImage := printf "%s:%s" $context.Values.global.modulesImages.registry $provisionerImageName }}
+  {{- $provisionerImage := include "helm_lib_module_common_image" (list $context $provisionerImageName) }}
 
   {{- $attacherImageName := join "" (list "csiExternalAttacher" $kubernetesSemVer.Major $kubernetesSemVer.Minor) }}
   {{- $attacherImage := include "helm_lib_module_common_image" (list $context $attacherImageName) }}

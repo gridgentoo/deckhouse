@@ -4,10 +4,10 @@
 {{- $images := dict }}
 {{- range $component := list "kubeApiserver" "kubeControllerManager" "kubeScheduler" }}
   {{- $componentWithSuffix := printf "%s%s" $component $kubeImageTagSuffix }}
-  {{- $_ := set $images $componentWithSuffix (include "helm_lib_module_image" (list $ $componentWithSuffix)) }}
+  {{- $_ := set $images $componentWithSuffix (get $.Values.global.modulesImages.tags.controlPlaneManager $componentWithSuffix) }}
 {{- end }}
-{{- $_ := set $images "kubeApiserverHealthcheck" (include "helm_lib_module_image" (list $ "kubeApiserverHealthcheck")) }}
-{{- $_ := set $images "etcd" (include "helm_lib_module_image" (list $ "etcd")) }}
+{{- $_ := set $images "kubeApiserverHealthcheck" $.Values.global.modulesImages.tags.controlPlaneManager.kubeApiserverHealthcheck }}
+{{- $_ := set $images "etcd" $.Values.global.modulesImages.tags.controlPlaneManager.etcd }}
 
 {{- $registry := dict }}
 {{- $_ := set $registry "address" $.Values.global.modulesImages.registryAddress }}
@@ -213,7 +213,7 @@ spec:
             {{- include "helm_lib_module_ephemeral_storage_logs_with_extra" 50 | nindent 12 }}
 {{- range $name, $imageTag := $images }}
       - name: image-holder-{{ $name | kebabcase }}
-        image: {{ $imageTag }}
+        image: "{{ $.Values.global.modulesImages.registry }}:{{ $imageTag }}"
         command:
         - /pause
 {{- end }}

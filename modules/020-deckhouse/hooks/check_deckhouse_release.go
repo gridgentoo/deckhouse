@@ -218,15 +218,17 @@ releaseLoop:
 
 	input.PatchCollector.Create(release, object_patch.IgnoreIfExists())
 
-	if v, ok := input.Values.GetOk("deckhouse.update.webhook"); ok {
+	if v, ok := input.Values.GetOk("deckhouse.update.notification.webhook"); ok {
 		webhookURL := v.String()
 		data := webhookData{
 			Version:       release.Spec.Version,
 			Requirements:  release.Spec.Requirements,
 			Changelog:     release.Spec.Changelog,
 			ChangelogLink: release.Spec.ChangelogLink,
+			Message:       "New Deckhouse release available",
 		}
-		go sendWebhookNotification(webhookURL, data)
+
+		go sendWebhookNotification(input.LogEntry, webhookURL, data)
 	}
 
 	return nil
@@ -237,9 +239,11 @@ type webhookData struct {
 	Requirements  map[string]string      `json:"requirements"`
 	Changelog     map[string]interface{} `json:"changelog"`
 	ChangelogLink string                 `json:"changelogLink"`
+
+	Message string `json:"message"`
 }
 
-func sendWebhookNotification(webhookURL string, data webhookData) {
+func sendWebhookNotification(logger *logrus.Entry, webhookURL string, data webhookData) {
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
@@ -248,17 +252,12 @@ func sendWebhookNotification(webhookURL string, data webhookData) {
 		Timeout:   10 * time.Second,
 	}
 
-	fmt.Println("D", data)
-
 	buf := bytes.NewBuffer(nil)
 	_ = json.NewEncoder(buf).Encode(data)
 
-	fmt.Println("B", buf.String())
-
 	_, err := client.Post(webhookURL, "application/json", buf)
 	if err != nil {
-		fmt.Println(err)
-		// TODO: logger
+		logger.Errorf("webhook request error: %s", err)
 	}
 }
 

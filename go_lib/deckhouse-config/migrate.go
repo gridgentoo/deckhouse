@@ -64,7 +64,7 @@ func MigrateConfigMapToModuleConfigs(kubeClient k8s.Client, possibleNames []stri
 			return nil, err
 		}
 		// If conversions are available for module, use them to convert to the latest version of values.
-		if conversion.IsRegistered(modConfig.GetName()) {
+		if conversion.Registry().HasModule(modConfig.GetName()) {
 			newVersion, newValues, err := conversion.ConvertToLatest(modConfig.GetName(), modConfig.Spec.ConfigVersion, modConfig.Spec.ConfigValues)
 			if err != nil {
 				return nil, err

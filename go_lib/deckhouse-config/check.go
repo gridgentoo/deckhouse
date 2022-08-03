@@ -34,7 +34,7 @@ func ValidateValues(cfg *v1.DeckhouseConfig) error {
 
 	// Run registered conversions.
 	convertedMsg := ""
-	if conversion.IsRegistered(cfg.GetName()) {
+	if conversion.Registry().HasModule(cfg.GetName()) {
 		newVersion, newValues, err := conversion.ConvertToLatest(cfg.GetName(), cfg.Spec.ConfigVersion, cfg.Spec.ConfigValues)
 		if err != nil {
 			return fmt.Errorf("convert %s config values from version %s to latest: %v", cfg.GetName(), cfg.Spec.ConfigVersion, err)

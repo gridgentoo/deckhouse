@@ -22,12 +22,14 @@ import (
 
 	"github.com/flant/addon-operator/pkg/module_manager"
 	"github.com/flant/addon-operator/pkg/module_manager/go_hook"
+	"github.com/flant/addon-operator/pkg/module_manager/go_hook/metrics"
 	"github.com/flant/addon-operator/sdk"
 	"github.com/flant/shell-operator/pkg/kube/object_patch"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/utils/pointer"
 
+	"github.com/deckhouse/deckhouse/go_lib/deckhouse-config/conversion"
 	d8config_v1 "github.com/deckhouse/deckhouse/go_lib/deckhouse-config/v1"
 	"github.com/deckhouse/deckhouse/go_lib/dependency"
 	"github.com/deckhouse/deckhouse/go_lib/set"
@@ -77,6 +79,11 @@ func filterDeckhouseConfigsForStatus(unstructured *unstructured.Unstructured) (g
 	}, nil
 }
 
+const (
+	d8ConfigGroup      = "deckhouse_config_metrics"
+	d8ConfigMetricName = "deckhouse_config_obsolete_version"
+)
+
 func updateDeckhouseConfigStatuses(input *go_hook.HookInput, dc dependency.Container) error {
 	knownModuleNames := set.New(dc.GetAddonOperator().ModuleManager.GetModuleNames()...)
 
@@ -86,6 +93,27 @@ func updateDeckhouseConfigStatuses(input *go_hook.HookInput, dc dependency.Conta
 		statusPatch := getConfigStatus(cfg, dc, knownModuleNames)
 		input.LogEntry.Infof("Patch /status for %s: enabled=%s, status=%s", cfg.GetName(), statusPatch.Enabled, statusPatch.Status)
 		input.PatchCollector.MergePatch(statusPatch, "deckhouse.io/v1", "DeckhouseConfig", "", cfg.GetName(), object_patch.WithSubresource("/status"))
+	}
+
+	// Export metrics for configs with obsolete versions.
+	input.MetricsCollector.Expire(d8ConfigGroup)
+	for _, cfg := range allConfigs {
+		modName := cfg.GetName()
+
+		if !conversion.Registry().HasModule(modName) {
+			continue
+		}
+
+		cfgVersion := cfg.Spec.ConfigVersion
+		latestVersion := conversion.Registry().LatestVersion(modName)
+
+		if cfgVersion != latestVersion {
+			input.MetricsCollector.Set(d8ConfigMetricName, 1.0, map[string]string{
+				"module":  modName,
+				"version": cfgVersion,
+				"latest":  latestVersion,
+			}, metrics.WithGroup(d8ConfigGroup))
+		}
 	}
 
 	return nil

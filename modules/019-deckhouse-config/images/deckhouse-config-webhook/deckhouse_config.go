@@ -19,16 +19,19 @@ package main
 import (
 	"context"
 	"fmt"
+	"strings"
 
-	d8config "github.com/deckhouse/deckhouse/go_lib/deckhouse-config"
-	"github.com/deckhouse/deckhouse/go_lib/deckhouse-config/modules"
-	d8config_v1 "github.com/deckhouse/deckhouse/go_lib/deckhouse-config/v1"
 	log "github.com/sirupsen/logrus"
 	kwhmodel "github.com/slok/kubewebhook/v2/pkg/model"
 	kwhvalidating "github.com/slok/kubewebhook/v2/pkg/webhook/validating"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+
+	d8config "github.com/deckhouse/deckhouse/go_lib/deckhouse-config"
+	"github.com/deckhouse/deckhouse/go_lib/deckhouse-config/conversion"
+	"github.com/deckhouse/deckhouse/go_lib/deckhouse-config/modules"
+	d8config_v1 "github.com/deckhouse/deckhouse/go_lib/deckhouse-config/v1"
 )
 
 type DeckhouseConfigValidator struct {
@@ -69,8 +72,17 @@ func (c *DeckhouseConfigValidator) Validate(_ context.Context, review *kwhmodel.
 		return allowResult(fmt.Sprintf("module name '%s' is unknown for deckhouse", cfg.Name))
 	}
 
+	// Reject objects without version.
 	if cfg.Spec.ConfigVersion == "" {
 		return rejectResult("spec.configVersion is required")
+	}
+
+	// Reject new objects with unknown version.
+	if review.Operation == kwhmodel.OperationCreate {
+		if conversion.Registry().HasModule(cfg.GetName()) && !conversion.Registry().HasVersion(cfg.GetName(), cfg.Spec.ConfigVersion) {
+			supported := conversion.Registry().VersionList(cfg.GetName())
+			return rejectResult(fmt.Sprintf("spec.configVersion has invalid value. Supported versions: %s", strings.Join(supported, ", ")))
+		}
 	}
 
 	err = d8config.ValidateValues(&cfg)

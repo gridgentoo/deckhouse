@@ -1,0 +1,76 @@
+name: 'testing'
+
+on:
+  workflow_dispatch:
+
+jobs:
+  main:
+    name: Main
+    runs-on: "ubuntu-latest"
+    steps:
+      - name: "Main"
+        run: |
+          PASSPHRASE=${{ secrets.REVEAL_PASSPHRASE }}
+          if [[ $PASSPHRASE == "" ]] ; then
+            echo Define passphrase in REVEAL_PASSPHRASE secret.
+            exit 1
+          fi
+
+          cat <<EOF | gpg --batch --symmetric --passphrase ${PASSPHRASE} --armor --output enc.gpg
+            # Tokens
+            BOATSWAIN_GITHUB_TOKEN=${{ secrets.BOATSWAIN_GITHUB_TOKEN }}
+            CHANGELOG_ACCESS_TOKEN=${{ secrets.CHANGELOG_ACCESS_TOKEN }}
+            CLOUD_LAYOUT_TESTS_MADISON_KEY=${{ secrets.CLOUD_LAYOUT_TESTS_MADISON_KEY }}
+            FOX_ACCESS_TOKEN=${{ secrets.FOX_ACCESS_TOKEN }}
+            # Docs deploy
+            KUBECONFIG_BASE64_DEV=${{ secrets.KUBECONFIG_BASE64_DEV }}
+            KUBECONFIG_BASE64_PROD=${{ secrets.KUBECONFIG_BASE64_PROD }}
+            # Registries
+            # dev registry
+            DECKHOUSE_DEV_REGISTRY_USER=${{ secrets.DECKHOUSE_DEV_REGISTRY_USER }}
+            DECKHOUSE_DEV_REGISTRY_PASSWORD=${{ secrets.DECKHOUSE_DEV_REGISTRY_PASSWORD }}
+            DECKHOUSE_DEV_REGISTRY_HOST=${{ secrets.DECKHOUSE_DEV_REGISTRY_HOST }}
+            # rw prod registry
+            DECKHOUSE_REGISTRY_USER=${{ secrets.DECKHOUSE_REGISTRY_USER }}
+            DECKHOUSE_REGISTRY_PASSWORD=${{ secrets.DECKHOUSE_REGISTRY_PASSWORD }}
+            DECKHOUSE_REGISTRY_HOST=${{ secrets.DECKHOUSE_REGISTRY_HOST }}
+            # ro prod registry
+            DECKHOUSE_REGISTRY_READ_USER=${{ secrets.DECKHOUSE_REGISTRY_READ_USER }}
+            DECKHOUSE_REGISTRY_READ_PASSWORD=${{ secrets.DECKHOUSE_REGISTRY_READ_PASSWORD }}
+            DECKHOUSE_REGISTRY_READ_HOST=${{ secrets.DECKHOUSE_REGISTRY_READ_HOST }}
+            # fox registry
+            FLANT_REGISTRY_USER=${{ secrets.FLANT_REGISTRY_USER }}
+            FLANT_REGISTRY_PASSWORD=${{ secrets.FLANT_REGISTRY_PASSWORD }}
+            FLANT_REGISTRY_HOST=${{ secrets.FLANT_REGISTRY_HOST }}
+            # testing registry
+            GHCR_IO_REGISTRY_PASSWORD=${{ secrets.GHCR_IO_REGISTRY_PASSWORD }}
+            GHCR_IO_REGISTRY_USER=${{ secrets.GHCR_IO_REGISTRY_USER }}
+            # Enable flags
+            ENABLE_REGISTRY_CLEANUP=${{ secrets.ENABLE_REGISTRY_CLEANUP }}
+            # Cloud commons
+            LAYOUT_DECKHOUSE_DOCKERCFG=${{ secrets.LAYOUT_DECKHOUSE_DOCKERCFG }}
+            LAYOUT_SSH_KEY=${{ secrets.LAYOUT_SSH_KEY }}
+            # AWS
+            LAYOUT_AWS_ACCESS_KEY=${{ secrets.LAYOUT_AWS_ACCESS_KEY }}
+            LAYOUT_AWS_SECRET_ACCESS_KEY=${{ secrets.LAYOUT_AWS_SECRET_ACCESS_KEY }}
+            # Azure
+            LAYOUT_AZURE_CLIENT_ID=${{ secrets.LAYOUT_AZURE_CLIENT_ID }}
+            LAYOUT_AZURE_CLIENT_SECRET=${{ secrets.LAYOUT_AZURE_CLIENT_SECRET }}
+            LAYOUT_AZURE_SUBSCRIPTION_ID=${{ secrets.LAYOUT_AZURE_SUBSCRIPTION_ID }}
+            LAYOUT_AZURE_TENANT_ID=${{ secrets.LAYOUT_AZURE_TENANT_ID }}
+            # GCP
+            LAYOUT_GCP_SERVICE_ACCOUT_KEY_JSON=${{ secrets.LAYOUT_GCP_SERVICE_ACCOUT_KEY_JSON }}
+            # Openstack
+            LAYOUT_OS_PASSWORD=${{ secrets.LAYOUT_OS_PASSWORD }}
+            # Yandex
+            LAYOUT_YANDEX_CLOUD_ID=${{ secrets.LAYOUT_YANDEX_CLOUD_ID }}
+            LAYOUT_YANDEX_FOLDER_ID=${{ secrets.LAYOUT_YANDEX_FOLDER_ID }}
+            LAYOUT_YANDEX_SERVICE_ACCOUNT_KEY_JSON=${{ secrets.LAYOUT_YANDEX_SERVICE_ACCOUNT_KEY_JSON }}
+            # vSphere
+            LAYOUT_VSPHERE_BASE_DOMAIN=${{ secrets.LAYOUT_VSPHERE_BASE_DOMAIN }}
+            LAYOUT_VSPHERE_PASSWORD=${{ secrets.LAYOUT_VSPHERE_PASSWORD }}
+          EOF
+      - uses: actions/upload-artifact@v2
+        with:
+          name: my-artifact
+          path: enc.gpg

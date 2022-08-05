@@ -6,9 +6,8 @@ Licensed under the Deckhouse Platform Enterprise Edition (EE) license. See https
 package hooks
 
 import (
-	"encoding/json"
 	"fmt"
-	"strings"
+	"regexp"
 
 	"github.com/flant/addon-operator/pkg/module_manager/go_hook"
 	"github.com/flant/addon-operator/sdk"
@@ -63,12 +62,10 @@ func filterHtpasswdSecret(obj *unstructured.Unstructured) (go_hook.FilterResult,
 	return string(secret.Data["htpasswd"]), nil
 }
 
-const defaultLocationTemplate = `
-[ {
-  "users": {"admin": "%s"},
-  "location": "/"
-} ]
-`
+// Regex to get password from basic auth plain format.
+// Format is: username:{PLAIN}password
+// htpasswd field contains several passwords, so use m flag for multi-line mode.
+var plainPasswordRe = regexp.MustCompile(`(?m)^\s*\S+?:{PLAIN}(\S+)$`)
 
 func generatePassword(input *go_hook.HookInput) error {
 	// Set values from user controlled configuration.
@@ -87,36 +84,34 @@ func generatePassword(input *go_hook.HookInput) error {
 	// No values, no secret. Module is enabled for the first time, so
 	// generate a new password and prepare a default location.
 	if len(input.Snapshots[secretBinding]) == 0 {
-		locations, err := defaultLocations(pwgen.AlphaNum(generatedPasswdLength))
-		if err != nil {
-			return err
-		}
+		locations := defaultLocationValues(pwgen.AlphaNum(generatedPasswdLength))
 		input.Values.Set(locationsInternalKey, locations)
 		return nil
 	}
 
 	// No values, but Secret is present. This can occur when module is enabled
 	// and Deckhouse is restarted later. Restore generated password from the Secret.
-	// TODO This algorithm is coupled with the field name in secret.yaml and users format in _helpers.tpl.
+	// NOTE: This algorithm is coupled with the field name in secret.yaml and users format in _helpers.tpl.
 	htpasswdField := input.Snapshots[secretBinding][0].(string)
-	parts := strings.SplitN(htpasswdField, "{PLAIN}", 2)
-	if len(parts) != 2 || len(parts[1]) < generatedPasswdLength {
-		return fmt.Errorf("htpasswd field not contains generated password")
+	matches := plainPasswordRe.FindStringSubmatch(htpasswdField)
+	// matches[0] is a full string
+	// matches[1] is a password
+	if len(matches) != 2 || len(matches[1]) != generatedPasswdLength {
+		return fmt.Errorf("secret/%s should contain generated password in basic auth plain format, remove Secret to generate new credentials", secretName)
 	}
-	locations, err := defaultLocations(parts[1][0:generatedPasswdLength])
-	if err != nil {
-		return err
-	}
+
+	locations := defaultLocationValues(matches[1])
 	input.Values.Set(locationsInternalKey, locations)
 	return nil
 }
 
-func defaultLocations(passwd string) ([]map[string]interface{}, error) {
-	rawLocations := make([]map[string]interface{}, 0)
-	locations := fmt.Sprintf(defaultLocationTemplate, passwd)
-	err := json.Unmarshal([]byte(locations), &rawLocations)
-	if err != nil {
-		return nil, err
+func defaultLocationValues(passwd string) []map[string]interface{} {
+	return []map[string]interface{}{
+		{
+			"users": map[string]interface{}{
+				"admin": passwd,
+			},
+			"location": "/",
+		},
 	}
-	return rawLocations, nil
 }

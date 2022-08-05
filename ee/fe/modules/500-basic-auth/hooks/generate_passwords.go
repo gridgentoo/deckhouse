@@ -62,10 +62,23 @@ func filterHtpasswdSecret(obj *unstructured.Unstructured) (go_hook.FilterResult,
 	return string(secret.Data["htpasswd"]), nil
 }
 
+const defaultUserName = `admin`
+
+func defaultLocationValues(passwd string) []map[string]interface{} {
+	return []map[string]interface{}{
+		{
+			"users": map[string]interface{}{
+				defaultUserName: passwd,
+			},
+			"location": "/",
+		},
+	}
+}
+
 // Regex to get password from basic auth plain format.
 // Format is: username:{PLAIN}password
 // htpasswd field contains several passwords, so use m flag for multi-line mode.
-var plainPasswordRe = regexp.MustCompile(`(?m)^\s*\S+?:{PLAIN}(\S+)$`)
+var defaultPasswordRe = regexp.MustCompile(`(?m)^\s*` + defaultUserName + `:{PLAIN}(\S+)$`)
 
 func generatePassword(input *go_hook.HookInput) error {
 	// Set values from user controlled configuration.
@@ -90,28 +103,18 @@ func generatePassword(input *go_hook.HookInput) error {
 	}
 
 	// No values, but Secret is present. This can occur when module is enabled
-	// and Deckhouse is restarted later. Restore generated password from the Secret.
-	// NOTE: This algorithm is coupled with the field name in secret.yaml and users format in _helpers.tpl.
+	// and Deckhouse is restarted later. Restore generated password from the Secret
+	// assuming it is in the first line of htpasswd field.
+	// NOTE: This algorithm is coupled with the field name in secret.yaml and "users" template in _helpers.tpl.
 	htpasswdField := input.Snapshots[secretBinding][0].(string)
-	matches := plainPasswordRe.FindStringSubmatch(htpasswdField)
+	matches := defaultPasswordRe.FindStringSubmatch(htpasswdField)
 	// matches[0] is a full string
 	// matches[1] is a password
 	if len(matches) != 2 || len(matches[1]) != generatedPasswdLength {
-		return fmt.Errorf("secret/%s should contain generated password in basic auth plain format, remove Secret to generate new credentials", secretName)
+		return fmt.Errorf("expect secret/%s contains generated credentials in basic auth plain format (remove Secret to generate new credentials)", secretName)
 	}
 
 	locations := defaultLocationValues(matches[1])
 	input.Values.Set(locationsInternalKey, locations)
 	return nil
-}
-
-func defaultLocationValues(passwd string) []map[string]interface{} {
-	return []map[string]interface{}{
-		{
-			"users": map[string]interface{}{
-				"admin": passwd,
-			},
-			"location": "/",
-		},
-	}
 }

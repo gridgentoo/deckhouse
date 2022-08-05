@@ -5,4 +5,5 @@ import (
 	_ "github.com/deckhouse/deckhouse/go_lib/deckhouse-config/conversion"
 
 	_ "github.com/deckhouse/deckhouse/modules/101-cert-manager/config-values-conversion"
+	_ "github.com/deckhouse/deckhouse/modules/500-openvpn/config-values-conversion"
 )

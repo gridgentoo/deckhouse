@@ -38,3 +38,6 @@ properties:
           password:
             type: string
             x-examples: ["p4ssw0rd"]
+      configMapName:
+        type: string
+        x-examples: ["deckhouse"]

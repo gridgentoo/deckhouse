@@ -184,7 +184,7 @@ spec:
                   key: server.http.cookie.maxnumber
                   name: argocd-cmd-params-cm
                   optional: true
-          image: quay.io/argoproj/argocd:v2.2.3
+          image: quay.io/argoproj/argocd:v2.2.4
           imagePullPolicy: Always
           livenessProbe:
             httpGet:

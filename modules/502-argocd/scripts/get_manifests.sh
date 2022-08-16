@@ -15,9 +15,18 @@
 set -euo pipefail
 set -x
 
+VERSION="v2.4.9"
+
 ARGOCD_REPO="${HOME}/dev/flant/argoproj/argo-cd"
 MANIFESTS="${ARGOCD_REPO}/manifests/install.yaml"
 HA_MANIFESTS="${ARGOCD_REPO}/manifests/ha/install.yaml"
+
+pushd $ARGOCD_REPO && 
+	git clean -df && 
+	git reset --hard &&
+	git fetch --all --prune && 
+	git checkout $VERSION && 
+	popd
 
 pull_manifests() {
         MANIFESTS=$1
@@ -29,7 +38,6 @@ pull_manifests() {
                 yq e --no-doc -s '.metadata.name' -
 
         # move CRD
-
         mv crd-*.yml crds &&
                 pushd crds &&
                 rename 's/^crd-//g' * &&
@@ -37,8 +45,12 @@ pull_manifests() {
 
         # move other manifests
         mkdir -p templates/argocd-application-controller
-        mv argocd-application-controller*.yml templates/argocd-application-controller
-        mv argocd-metrics.yml templates/argocd-application-controller
+        mv argocd-application-controller*.yml    templates/argocd-application-controller
+        mv argocd-applicationset-controller*.yml templates/argocd-application-controller
+        mv argocd-metrics.yml                    templates/argocd-application-controller
+
+        mkdir -p templates/argocd-notifications
+        mv argocd-notifications*.yml templates/argocd-notifications
 
         mkdir -p templates/argocd-repo-server
         mv argocd-repo-server*.yml templates/argocd-repo-server
@@ -48,7 +60,8 @@ pull_manifests() {
 
         mkdir -p templates/argocd-dex
         mv argocd-dex*.yml templates/argocd-dex
-        rm -rf templates/argocd-dex # We use or own dex
+	# We use our own dex
+        rm -rf templates/argocd-dex 
 
         mkdir -p templates/redis
         mv argocd-redis*.yml templates/redis

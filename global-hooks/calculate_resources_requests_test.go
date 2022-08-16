@@ -30,7 +30,7 @@ kind: Node
 metadata:
   name: sandbox-21-master
   labels:
-    node-role.kubernetes.io/master: ""
+    node-role.kubernetes.io/control-plane: ""
 status:
   allocatable:
     cpu: "4"
@@ -43,7 +43,7 @@ kind: Node
 metadata:
   name: sandbox-22-master
   labels:
-    node-role.kubernetes.io/master: ""
+    node-role.kubernetes.io/control-plane: ""
 status:
   allocatable:
     cpu: "2048m"

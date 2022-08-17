@@ -62,6 +62,7 @@ func cwd() string {
 		dir = filepath.Dir(dir)
 	}
 
+	// deckhouse can by mountead as symlink /deckhouse
 	dir, err = filepath.EvalSymlinks(dir)
 	if err != nil {
 		panic(err)

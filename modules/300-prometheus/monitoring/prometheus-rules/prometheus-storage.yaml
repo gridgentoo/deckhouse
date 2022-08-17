@@ -19,7 +19,7 @@
         Consider increasing it https://deckhouse.io/en/documentation/v1/modules/300-prometheus/faq.html#how-to-expand-disk-size
   - alert: PrometheusMainRetainLessThan10Days
     expr: |
-      group by (service) (rate(prometheus_tsdb_time_retentions_total{service="prometheus"}[24h]) > 0)
+      group by (service) (increase(prometheus_tsdb_size_retentions_total{service="prometheus"}[24h]) > 0)
       and
       group by (service) ((time() - prometheus_tsdb_lowest_timestamp_seconds{service="prometheus"}) / 60 / 60 / 24 < 10)
       and
@@ -34,7 +34,7 @@
       summary: Prometheus-main data is retained for less than 10 days
   - alert: PrometheusLongtermRetainLessThan30Days
     expr: |
-      group by (service) (rate(prometheus_tsdb_time_retentions_total{service="prometheus-longterm"}[24h]) > 0)
+      group by (service) (increase(prometheus_tsdb_size_retentions_total{service="prometheus-longterm"}[24h]) > 0)
       and
       group by (service) ((time() - prometheus_tsdb_lowest_timestamp_seconds{service="prometheus-longterm"}) / 60 / 60 / 24 < 30)
       and

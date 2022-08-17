@@ -36,11 +36,16 @@ spec:
             - ""
             - --appendonly
             - "no"
-          image: redis:6.2.6-alpine
+          image: redis:7.0.4-alpine
           imagePullPolicy: Always
           name: redis
           ports:
             - containerPort: 6379
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - all
       securityContext:
         runAsNonRoot: true
         runAsUser: 999

@@ -36,10 +36,18 @@ spec:
         - command:
             - argocd-application-controller
           env:
+            - name: ARGOCD_CONTROLLER_REPLICAS
+              value: "1"
             - name: ARGOCD_RECONCILIATION_TIMEOUT
               valueFrom:
                 configMapKeyRef:
                   key: timeout.reconciliation
+                  name: argocd-cm
+                  optional: true
+            - name: ARGOCD_HARD_RECONCILIATION_TIMEOUT
+              valueFrom:
+                configMapKeyRef:
+                  key: timeout.hard.reconciliation
                   name: argocd-cm
                   optional: true
             - name: ARGOCD_APPLICATION_CONTROLLER_REPO_SERVER
@@ -126,7 +134,13 @@ spec:
                   key: controller.default.cache.expiration
                   name: argocd-cmd-params-cm
                   optional: true
-          image: quay.io/argoproj/argocd:v2.2.4
+            - name: ARGOCD_APPLICATION_CONTROLLER_OTLP_ADDRESS
+              valueFrom:
+                configMapKeyRef:
+                  key: otlp.address
+                  name: argocd-cmd-params-cm
+                  optional: true
+          image: quay.io/argoproj/argocd:v2.4.9
           imagePullPolicy: Always
           livenessProbe:
             httpGet:

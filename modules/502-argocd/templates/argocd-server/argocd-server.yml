@@ -100,6 +100,12 @@ spec:
                   key: server.x.frame.options
                   name: argocd-cmd-params-cm
                   optional: true
+            - name: ARGOCD_SERVER_CONTENT_SECURITY_POLICY
+              valueFrom:
+                configMapKeyRef:
+                  key: server.content.security.policy
+                  name: argocd-cmd-params-cm
+                  optional: true
             - name: ARGOCD_SERVER_REPO_SERVER_PLAINTEXT
               valueFrom:
                 configMapKeyRef:
@@ -184,7 +190,13 @@ spec:
                   key: server.http.cookie.maxnumber
                   name: argocd-cmd-params-cm
                   optional: true
-          image: quay.io/argoproj/argocd:v2.2.4
+            - name: ARGOCD_SERVER_OTLP_ADDRESS
+              valueFrom:
+                configMapKeyRef:
+                  key: otlp.address
+                  name: argocd-cmd-params-cm
+                  optional: true
+          image: quay.io/argoproj/argocd:v2.4.9
           imagePullPolicy: Always
           livenessProbe:
             httpGet:
@@ -226,8 +238,6 @@ spec:
           name: plugins-home
         - emptyDir: {}
           name: tmp
-        - emptyDir: {}
-          name: static-files
         - configMap:
             name: argocd-ssh-known-hosts-cm
           name: ssh-known-hosts

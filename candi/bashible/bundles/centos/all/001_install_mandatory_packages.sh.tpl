@@ -20,6 +20,9 @@ fi
 if bb-is-centos-version? 8; then
   SYSTEM_PACKAGES="${SYSTEM_PACKAGES} policycoreutils-python-utils libcgroup"
 fi
+if bb-is-centos-version? 9; then
+  SYSTEM_PACKAGES="${SYSTEM_PACKAGES} policycoreutils-python-utils"
+fi
 # yum-plugin-versionlock is needed for bb-yum-install
 if yum --version | grep -q dnf; then
   bb-yum-install python3-dnf-plugin-versionlock

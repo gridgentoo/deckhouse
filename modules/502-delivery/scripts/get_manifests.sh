@@ -45,6 +45,9 @@ pushd $ARGOCD_REPO &&
   git checkout $VERSION &&
   popd
 
+CRD_ROOT=crds
+MANIFESTS_ROOT=templates/argocd
+
 pull_manifests() {
   MANIFESTS=$1
 
@@ -55,43 +58,43 @@ pull_manifests() {
     yq e --no-doc -s '.metadata.name' -
 
   # move CRD
-  mv crd-*.yml crds &&
-    pushd crds &&
-    rename 's/^crd-//g' * &&
+  mv crd-*.yml ${CRD_ROOT} &&
+    pushd ${CRD_ROOT} &&
+    rename 's/^crd-(.*)/argocd-$1/g' * &&
     popd
 
   # move other manifests
-  mkdir -p templates/argocd-application-controller
-  mv argocd-application-controller*.yml templates/argocd-application-controller
-  mv argocd-applicationset-controller*.yml templates/argocd-application-controller
-  mv argocd-metrics.yml templates/argocd-application-controller
+  mkdir -p ${MANIFESTS_ROOT}/argocd-application-controller
+  mv argocd-application-controller*.yml ${MANIFESTS_ROOT}/argocd-application-controller
+  mv argocd-applicationset-controller*.yml ${MANIFESTS_ROOT}/argocd-application-controller
+  mv argocd-metrics.yml ${MANIFESTS_ROOT}/argocd-application-controller
 
-  mkdir -p templates/argocd-notifications
-  mv argocd-notifications*.yml templates/argocd-notifications
+  mkdir -p ${MANIFESTS_ROOT}/argocd-notifications
+  mv argocd-notifications*.yml ${MANIFESTS_ROOT}/argocd-notifications
 
-  mkdir -p templates/argocd-repo-server
-  mv argocd-repo-server*.yml templates/argocd-repo-server
+  mkdir -p ${MANIFESTS_ROOT}/argocd-repo-server
+  mv argocd-repo-server*.yml ${MANIFESTS_ROOT}/argocd-repo-server
 
-  mkdir -p templates/argocd-server
-  mv argocd-server*.yml templates/argocd-server
+  mkdir -p ${MANIFESTS_ROOT}/argocd-server
+  mv argocd-server*.yml ${MANIFESTS_ROOT}/argocd-server
 
-  mkdir -p templates/argocd-dex
-  mv argocd-dex*.yml templates/argocd-dex
+  mkdir -p ${MANIFESTS_ROOT}/argocd-dex
+  mv argocd-dex*.yml ${MANIFESTS_ROOT}/argocd-dex
   # We use our own dex
-  rm -rf templates/argocd-dex
+  rm -rf ${MANIFESTS_ROOT}/argocd-dex
 
-  mkdir -p templates/redis
-  mv argocd-redis*.yml templates/redis
-  pushd templates/redis && rename 's/^(.*)$/ha-$1/g' *-ha* && rename 's/-ha//' *-ha* && popd
+  mkdir -p ${MANIFESTS_ROOT}/redis
+  mv argocd-redis*.yml ${MANIFESTS_ROOT}/redis
+  pushd ${MANIFESTS_ROOT}/redis && rename 's/^(.*)$/ha-$1/g' *-ha* && rename 's/-ha//' *-ha* && popd
 
   # all other manifests
-  mv argocd-*.yml templates/
+  mv argocd-*.yml ${MANIFESTS_ROOT}/
 }
 
 # clean existing manifests
-mkdir -p crds
-mkdir -p templates
-rm -rf templates/* crds/*
+mkdir -p $CRD_ROOT
+mkdir -p $MANIFESTS_ROOT
+rm -rf ${MANIFESTS_ROOT}/* crds/argocd-*
 
 pull_manifests "${MANIFESTS}"
 # pull_manifests "${HA_MANIFESTS}"

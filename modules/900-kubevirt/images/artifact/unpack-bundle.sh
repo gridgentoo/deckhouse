@@ -6,6 +6,6 @@ cat "$DIR/manifest.json" | jq -r '.[].RepoTags[0]' | \
     (set -x; mkdir -p "$image")
     cat "$DIR/manifest.json" | jq -r --arg tag "$image" '.[]| select(.RepoTags[0] == $tag).Layers[]' | \
       while read layer; do
-        (set -x; tar -C "$image" --exclude='./var/run/*' -xf "$DIR/$layer" .)
+        (set -x; tar -C "$image" --overwrite --exclude='./var/run/*' -xf "$DIR/$layer" .)
       done
 done

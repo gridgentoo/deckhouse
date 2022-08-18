@@ -81,6 +81,7 @@ WORKDIR /tmp/cilium-repo/cilium-1.11.5
 COPY patches/001-netfilter-compatibility-mode.patch /
 COPY patches/002-skip-host-ip-gc.patch /
 COPY patches/003-fix-bwmap-delete-errors.patch /
+COPY patches/004-customer-annotations.patch /
 
 RUN patch -p1 < /001-netfilter-compatibility-mode.patch && \
     patch -p1 < /002-skip-host-ip-gc.patch && \

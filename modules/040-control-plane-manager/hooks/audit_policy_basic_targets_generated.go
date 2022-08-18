@@ -20,6 +20,7 @@ var auditPolicyBasicNamespaces = []string{
 	"d8-ingress-nginx",
 	"d8-istio",
 	"d8-keepalived",
+	"d8-kubevirt",
 	"d8-linstor",
 	"d8-local-path-provisioner",
 	"d8-log-shipper",
@@ -107,6 +108,7 @@ var auditPolicyBasicServiceAccounts = []string{
 	"ui",
 	"upmeter",
 	"upmeter-agent",
+	"vmi-router",
 	"webhook",
 	"webhook-handler",
 }

@@ -1,0 +1,109 @@
+{{- define "kubevirt-images" -}}
+- name: OPERATOR_IMAGE
+  value: "{{ $.Values.global.modulesImages.registry }}:{{ $.Values.global.modulesImages.tags.kubevirt.virtOperator }}"
+- name: VIRT_API_IMAGE
+  value: "{{ $.Values.global.modulesImages.registry }}:{{ $.Values.global.modulesImages.tags.kubevirt.virtApi }}"
+- name: VIRT_CONTROLLER_IMAGE
+  value: "{{ $.Values.global.modulesImages.registry }}:{{ $.Values.global.modulesImages.tags.kubevirt.virtController }}"
+- name: VIRT_HANDLER_IMAGE
+  value: "{{ $.Values.global.modulesImages.registry }}:{{ $.Values.global.modulesImages.tags.kubevirt.virtHandler }}"
+- name: VIRT_LAUNCHER_IMAGE
+  value: "{{ $.Values.global.modulesImages.registry }}:{{ $.Values.global.modulesImages.tags.kubevirt.virtLauncher }}"
+- name: VIRT_EXPORTPROXY_IMAGE
+  value: todo
+- name: VIRT_EXPORTSERVER_IMAGE
+  value: todo
+{{- end }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    kubevirt.io: virt-operator
+  name: virt-operator
+  namespace: d8-kubevirt
+  {{- include "helm_lib_module_labels" (list .) | nindent 2 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      kubevirt.io: virt-operator
+  strategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        kubevirt.io: virt-operator
+        name: virt-operator
+        prometheus.kubevirt.io: "true"
+      name: virt-operator
+    spec:
+      imagePullSecrets:
+      - name: deckhouse-registry
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: kubevirt.io
+                  operator: In
+                  values:
+                  - virt-operator
+              topologyKey: kubernetes.io/hostname
+            weight: 1
+      containers:
+      - args:
+        - --port
+        - "8443"
+        - -v
+        - "2"
+        command:
+        - virt-operator
+        env:
+        {{- include "kubevirt-images" . | nindent 8 }}
+        - name: KUBEVIRT_VERSION
+          value: {{ include "kubevirt-images" . | sha256sum }}
+        - name: WATCH_NAMESPACE
+          value: d8-kubevirt
+        image: "{{ $.Values.global.modulesImages.registry }}:{{ $.Values.global.modulesImages.tags.kubevirt.virtOperator }}"
+        imagePullPolicy: IfNotPresent
+        name: virt-operator
+        ports:
+        - containerPort: 8443
+          name: metrics
+          protocol: TCP
+        - containerPort: 8444
+          name: webhooks
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /metrics
+            port: 8443
+            scheme: HTTPS
+          initialDelaySeconds: 5
+          timeoutSeconds: 10
+        resources:
+          requests:
+            cpu: 10m
+            memory: 150Mi
+        volumeMounts:
+        - mountPath: /etc/virt-operator/certificates
+          name: kubevirt-operator-certs
+          readOnly: true
+        - mountPath: /profile-data
+          name: profile-data
+      priorityClassName: kubevirt-cluster-critical
+      securityContext:
+        runAsNonRoot: true
+      serviceAccountName: kubevirt-operator
+      tolerations:
+      - key: CriticalAddonsOnly
+        operator: Exists
+      volumes:
+      - name: kubevirt-operator-certs
+        secret:
+          optional: true
+          secretName: kubevirt-operator-certs
+      - emptyDir: {}
+        name: profile-data

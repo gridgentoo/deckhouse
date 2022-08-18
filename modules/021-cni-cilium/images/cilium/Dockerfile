@@ -84,7 +84,8 @@ COPY patches/003-fix-bwmap-delete-errors.patch /
 
 RUN patch -p1 < /001-netfilter-compatibility-mode.patch && \
     patch -p1 < /002-skip-host-ip-gc.patch && \
-    patch -p1 < /003-fix-bwmap-delete-errors.patch
+    patch -p1 < /003-fix-bwmap-delete-errors.patch && \
+    patch -p1 < /004-customer-annotations.patch
 
 RUN make PKG_BUILD=1 \
     SKIP_DOCS=true DESTDIR=/tmp/install build-container install-container-binary

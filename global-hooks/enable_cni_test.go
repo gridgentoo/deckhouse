@@ -132,7 +132,7 @@ var _ = Describe("Global hooks :: enable_cni ::", func() {
 
 				It("Enables cni module "+module, func() {
 					Expect(f).To(ExecuteSuccessfully())
-					Expect(f.ValuesGet(module).Exists()).To(BeTrue())
+					Expect(f.ValuesGet(module).Exists()).To(BeFalse())
 				})
 
 				It("Disables another cni modules", func() {
@@ -153,7 +153,7 @@ var _ = Describe("Global hooks :: enable_cni ::", func() {
 
 					It("Does not change cni module", func() {
 						Expect(f).To(ExecuteSuccessfully())
-						Expect(f.ValuesGet(module).Exists()).To(BeTrue())
+						Expect(f.ValuesGet(module).Exists()).To(BeFalse())
 					})
 				})
 			}

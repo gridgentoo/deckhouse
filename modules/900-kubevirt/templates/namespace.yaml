@@ -1,0 +1,8 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    kubevirt.io: ""
+  name: d8-kubevirt
+  {{- include "helm_lib_module_labels" (list .) | nindent 2 }}

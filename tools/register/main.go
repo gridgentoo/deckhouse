@@ -52,6 +52,13 @@ func cwd() string {
 		dir = filepath.Dir(dir)
 	}
 
+	// If deckhouse repo directory is mounted symlinked to /deckhouse, resolve the real path.
+	// Otherwise, filepath.Walk will ignore all subdirectories.
+	dir, err = filepath.EvalSymlinks(dir)
+	if err != nil {
+		panic(err)
+	}
+
 	return dir
 }
 

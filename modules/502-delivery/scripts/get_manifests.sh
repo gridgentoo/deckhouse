@@ -46,7 +46,7 @@ pushd $ARGOCD_REPO &&
   popd
 
 CRD_ROOT=crds
-MANIFESTS_ROOT=templates/argocd
+ARGOCD_MANIFESTS_ROOT=templates/argocd
 
 pull_manifests() {
   MANIFESTS=$1
@@ -57,44 +57,47 @@ pull_manifests() {
   yq eval-all 'select(.kind != "CustomResourceDefinition") | .' $MANIFESTS |
     yq e --no-doc -s '.metadata.name' -
 
+  # .yml -> .yaml
+  rename -s yml yaml *.yml
+
   # move CRD
-  mv crd-*.yml ${CRD_ROOT} &&
+  mv crd-*.yaml ${CRD_ROOT} &&
     pushd ${CRD_ROOT} &&
     rename 's/^crd-(.*)/argocd-$1/g' * &&
     popd
 
   # move other manifests
-  mkdir -p ${MANIFESTS_ROOT}/argocd-application-controller
-  mv argocd-application-controller*.yml ${MANIFESTS_ROOT}/argocd-application-controller
-  mv argocd-applicationset-controller*.yml ${MANIFESTS_ROOT}/argocd-application-controller
-  mv argocd-metrics.yml ${MANIFESTS_ROOT}/argocd-application-controller
+  mkdir -p ${ARGOCD_MANIFESTS_ROOT}/application-controller
+  mv argocd-application-controller*.yaml ${ARGOCD_MANIFESTS_ROOT}/application-controller
+  mv argocd-applicationset-controller*.yaml ${ARGOCD_MANIFESTS_ROOT}/application-controller
+  mv argocd-metrics.yaml ${ARGOCD_MANIFESTS_ROOT}/application-controller
 
-  mkdir -p ${MANIFESTS_ROOT}/argocd-notifications
-  mv argocd-notifications*.yml ${MANIFESTS_ROOT}/argocd-notifications
+  mkdir -p ${ARGOCD_MANIFESTS_ROOT}/notifications
+  mv argocd-notifications*.yaml ${ARGOCD_MANIFESTS_ROOT}/notifications
 
-  mkdir -p ${MANIFESTS_ROOT}/argocd-repo-server
-  mv argocd-repo-server*.yml ${MANIFESTS_ROOT}/argocd-repo-server
+  mkdir -p ${ARGOCD_MANIFESTS_ROOT}/repo-server
+  mv argocd-repo-server*.yaml ${ARGOCD_MANIFESTS_ROOT}/repo-server
 
-  mkdir -p ${MANIFESTS_ROOT}/argocd-server
-  mv argocd-server*.yml ${MANIFESTS_ROOT}/argocd-server
+  mkdir -p ${ARGOCD_MANIFESTS_ROOT}/server
+  mv argocd-server*.yaml ${ARGOCD_MANIFESTS_ROOT}/server
 
-  mkdir -p ${MANIFESTS_ROOT}/argocd-dex
-  mv argocd-dex*.yml ${MANIFESTS_ROOT}/argocd-dex
+  mkdir -p ${ARGOCD_MANIFESTS_ROOT}/dex
+  mv argocd-dex*.yaml ${ARGOCD_MANIFESTS_ROOT}/dex
   # We use our own dex
-  rm -rf ${MANIFESTS_ROOT}/argocd-dex
+  rm -rf ${ARGOCD_MANIFESTS_ROOT}/dex
 
-  mkdir -p ${MANIFESTS_ROOT}/redis
-  mv argocd-redis*.yml ${MANIFESTS_ROOT}/redis
-  pushd ${MANIFESTS_ROOT}/redis && rename 's/^(.*)$/ha-$1/g' *-ha* && rename 's/-ha//' *-ha* && popd
+  mkdir -p ${ARGOCD_MANIFESTS_ROOT}/redis
+  mv argocd-redis*.yaml ${ARGOCD_MANIFESTS_ROOT}/redis
+  pushd ${ARGOCD_MANIFESTS_ROOT}/redis && rename 's/^(.*)$/ha-$1/g' *-ha* && rename 's/-ha//' *-ha* && popd
 
   # all other manifests
-  mv argocd-*.yml ${MANIFESTS_ROOT}/
+  mv argocd-*.yaml ${ARGOCD_MANIFESTS_ROOT}/
 }
 
 # clean existing manifests
 mkdir -p $CRD_ROOT
-mkdir -p $MANIFESTS_ROOT
-rm -rf ${MANIFESTS_ROOT}/* crds/argocd-*
+mkdir -p $ARGOCD_MANIFESTS_ROOT
+rm -rf ${ARGOCD_MANIFESTS_ROOT}/* crds/argocd-*
 
 pull_manifests "${MANIFESTS}"
 # pull_manifests "${HA_MANIFESTS}"

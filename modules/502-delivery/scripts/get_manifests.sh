@@ -107,8 +107,7 @@ pull_manifests() {
 # clean existing manifests
 mkdir -p $CRD_ROOT
 mkdir -p $ARGOCD_MANIFESTS_ROOT
-rm -rf ${ARGOCD_MANIFESTS_ROOT}/* crds/argocd-*
-# rm -rf *.yml *.yaml || true
+rm -rf ${ARGOCD_MANIFESTS_ROOT}/argocd-* ${ARGOCD_MANIFESTS_ROOT}/*/argocd-* crds/argocd-*
 
 pull_manifests "${MANIFESTS}"
 # pull_manifests "${HA_MANIFESTS}"

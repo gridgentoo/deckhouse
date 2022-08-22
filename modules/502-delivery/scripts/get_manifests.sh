@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Copyright 2021 Flant JSC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -66,17 +66,17 @@ pull_manifests() {
     rename 's/^crd-(.*)/argocd-$1/g' * &&
     popd
 
-  ls argocd-*.yaml |
-    xargs -n 1 -- yq -i 'select(.kind | test("^Cluster.+") | not) | .metadata.namespace="d8-{{ .Chart.Name }}"'
+  # Add namespace to manifests
+  xargs -n 1 -- yq -i 'select(.kind | test("^Cluster.+") | not) | .metadata.namespace="d8-{{ .Chart.Name }}"' <<<$(ls argocd-*.yaml)
 
-  # Fix default argocd namespace.
-  #   - `sed -i`` does not on bot MacOS and Linux consistently, so using Perl.
+  # Fix default argocd namespace where it is specified (Clusterrolebindings).
+  # https://argo-cd.readthedocs.io/en/stable/getting_started/#1-install-argo-cd
+  #   - `sed -i` does not on bot MacOS and Linux consistently, so using Perl.
   #   - not using `yq` to avoid coupling with manifests paths, we don't know where we can meet the
   #     namespace.
-  egrep -r '^\s+namespace: argocd$' --files-with-matches |
-    xargs -n 1 -- perl -pi -e 's/namespace: argocd/namespace: d8-{{ .Chart.Name }}/'
+  xargs -n 1 -- perl -pi -e 's/namespace: argocd/namespace: d8-{{ .Chart.Name }}/' <<<$(egrep '^\s+namespace: argocd$' --files-with-matches argocd-*.yaml)
 
-  # move other manifests
+  # Sort manifests
   mkdir -p ${ARGOCD_MANIFESTS_ROOT}/application-controller
   mv argocd-application-controller*.yaml ${ARGOCD_MANIFESTS_ROOT}/application-controller
   mv argocd-applicationset-controller*.yaml ${ARGOCD_MANIFESTS_ROOT}/application-controller
@@ -98,7 +98,7 @@ pull_manifests() {
 
   mkdir -p ${ARGOCD_MANIFESTS_ROOT}/redis
   mv argocd-redis*.yaml ${ARGOCD_MANIFESTS_ROOT}/redis
-  pushd ${ARGOCD_MANIFESTS_ROOT}/redis && rename 's/^(.*)$/ha-$1/g' *-ha* && rename 's/-ha//' *-ha* && popd
+  pushd ${ARGOCD_MANIFESTS_ROOT}/redis && rename 's/^(.*)$/ha-$1/g' *-ha* && rename 's/-ha//' *-ha* || true && popd
 
   # all other manifests
   mv argocd-*.yaml ${ARGOCD_MANIFESTS_ROOT}/
@@ -108,6 +108,7 @@ pull_manifests() {
 mkdir -p $CRD_ROOT
 mkdir -p $ARGOCD_MANIFESTS_ROOT
 rm -rf ${ARGOCD_MANIFESTS_ROOT}/* crds/argocd-*
+# rm -rf *.yml *.yaml || true
 
 pull_manifests "${MANIFESTS}"
 # pull_manifests "${HA_MANIFESTS}"

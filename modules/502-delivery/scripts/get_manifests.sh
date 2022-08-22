@@ -92,6 +92,13 @@ pull_manifests() {
 
   # all other manifests
   mv argocd-*.yaml ${ARGOCD_MANIFESTS_ROOT}/
+
+  # Fix default argocd namespace.
+  #   - `sed -i`` does not on bot MacOS and Linux consistently, so using Perl.
+  #   - not using `yq` to avoid coupling with manifests paths, we don't know where we can meet the
+  #     namespace.
+  egrep -r '^\s+namespace: argocd$' --files-with-matches |
+    xargs -n 1 -- perl -pi -e 's/namespace: argocd/namespace: d8-{{ .Chart.Name }}/'
 }
 
 # clean existing manifests

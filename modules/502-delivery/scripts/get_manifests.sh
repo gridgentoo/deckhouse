@@ -55,7 +55,7 @@ pull_manifests() {
     yq e --no-doc -s '"crd-" + .spec.names.singular' -
 
   yq eval-all 'select(.kind != "CustomResourceDefinition") | .' $MANIFESTS |
-    yq e --no-doc -s '.metadata.name' -
+    yq e --no-doc -s '.metadata.name + "-" + (.kind | downcase)' -
 
   # .yml -> .yaml
   rename -s yml yaml *.yml
@@ -70,7 +70,7 @@ pull_manifests() {
   mkdir -p ${ARGOCD_MANIFESTS_ROOT}/application-controller
   mv argocd-application-controller*.yaml ${ARGOCD_MANIFESTS_ROOT}/application-controller
   mv argocd-applicationset-controller*.yaml ${ARGOCD_MANIFESTS_ROOT}/application-controller
-  mv argocd-metrics.yaml ${ARGOCD_MANIFESTS_ROOT}/application-controller
+  # mv argocd-metrics-*.yaml ${ARGOCD_MANIFESTS_ROOT}/application-controller
 
   mkdir -p ${ARGOCD_MANIFESTS_ROOT}/notifications
   mv argocd-notifications*.yaml ${ARGOCD_MANIFESTS_ROOT}/notifications

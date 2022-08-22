@@ -79,11 +79,13 @@ pull_manifests() {
   # Sort manifests
   mkdir -p ${ARGOCD_MANIFESTS_ROOT}/application-controller
   mv argocd-application-controller*.yaml ${ARGOCD_MANIFESTS_ROOT}/application-controller
-  mv argocd-applicationset-controller*.yaml ${ARGOCD_MANIFESTS_ROOT}/application-controller
-  # mv argocd-metrics-*.yaml ${ARGOCD_MANIFESTS_ROOT}/application-controller
+  mv argocd-metrics-*.yaml ${ARGOCD_MANIFESTS_ROOT}/application-controller
 
-  mkdir -p ${ARGOCD_MANIFESTS_ROOT}/notifications
-  mv argocd-notifications*.yaml ${ARGOCD_MANIFESTS_ROOT}/notifications
+  mkdir -p ${ARGOCD_MANIFESTS_ROOT}/applicationset-controller
+  mv argocd-applicationset-controller*.yaml ${ARGOCD_MANIFESTS_ROOT}/applicationset-controller
+
+  mkdir -p ${ARGOCD_MANIFESTS_ROOT}/notifications-controller
+  mv argocd-notifications*.yaml ${ARGOCD_MANIFESTS_ROOT}/notifications-controller
 
   mkdir -p ${ARGOCD_MANIFESTS_ROOT}/repo-server
   mv argocd-repo-server*.yaml ${ARGOCD_MANIFESTS_ROOT}/repo-server

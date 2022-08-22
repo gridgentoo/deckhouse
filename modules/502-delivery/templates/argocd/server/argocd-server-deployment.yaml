@@ -6,6 +6,7 @@ metadata:
     app.kubernetes.io/name: argocd-server
     app.kubernetes.io/part-of: argocd
   name: argocd-server
+  namespace: d8-{{ .Chart.Name }}
 spec:
   selector:
     matchLabels:

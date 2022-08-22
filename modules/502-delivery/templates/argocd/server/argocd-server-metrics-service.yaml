@@ -6,6 +6,7 @@ metadata:
     app.kubernetes.io/name: argocd-server-metrics
     app.kubernetes.io/part-of: argocd
   name: argocd-server-metrics
+  namespace: d8-{{ .Chart.Name }}
 spec:
   ports:
     - name: metrics

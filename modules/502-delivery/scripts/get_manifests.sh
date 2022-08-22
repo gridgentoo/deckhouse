@@ -67,14 +67,14 @@ pull_manifests() {
     popd
 
   # Add namespace to manifests
-  xargs -n 1 -- yq -i 'select(.kind | test("^Cluster.+") | not) | .metadata.namespace="d8-{{ .Chart.Name }}"' <<<$(ls argocd-*.yaml)
+  xargs -n 1 -- yq -i '.metadata.namespace="d8-{{ .Chart.Name }}"' <<<$(egrep --files-without-match '^kind: Cluster' argocd-*.yaml)
 
   # Fix default argocd namespace where it is specified (Clusterrolebindings).
   # https://argo-cd.readthedocs.io/en/stable/getting_started/#1-install-argo-cd
   #   - `sed -i` does not on bot MacOS and Linux consistently, so using Perl.
   #   - not using `yq` to avoid coupling with manifests paths, we don't know where we can meet the
   #     namespace.
-  xargs -n 1 -- perl -pi -e 's/namespace: argocd/namespace: d8-{{ .Chart.Name }}/' <<<$(egrep '^\s+namespace: argocd$' --files-with-matches argocd-*.yaml)
+  xargs -n 1 -- perl -pi -e 's/namespace: argocd/namespace: d8-{{ .Chart.Name }}/' <<<$(egrep --files-with-matches '^\s+namespace: argocd$' argocd-*.yaml)
 
   # Sort manifests
   mkdir -p ${ARGOCD_MANIFESTS_ROOT}/application-controller

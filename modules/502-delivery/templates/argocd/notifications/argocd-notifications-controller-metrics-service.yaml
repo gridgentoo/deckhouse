@@ -4,6 +4,7 @@ metadata:
   labels:
     app.kubernetes.io/name: argocd-notifications-controller-metrics
   name: argocd-notifications-controller-metrics
+  namespace: d8-{{ .Chart.Name }}
 spec:
   ports:
     - name: metrics

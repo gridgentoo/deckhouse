@@ -5,3 +5,4 @@ metadata:
     app.kubernetes.io/name: argocd-gpg-keys-cm
     app.kubernetes.io/part-of: argocd
   name: argocd-gpg-keys-cm
+  namespace: d8-{{ .Chart.Name }}

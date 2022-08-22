@@ -1,0 +1,61 @@
+apiVersion: deckhouse.io/v1alpha1
+kind: NodeGroupConfiguration
+metadata:
+  name: install-kernel-headers.sh
+  {{- include "helm_lib_module_labels" (list .) | nindent 2 }}
+spec:
+  weight: 100
+  nodeGroups: ["*"]
+  bundles: ["*"]
+  content: |
+    # Copyright 2021 Flant JSC
+    #
+    # Licensed under the Apache License, Version 2.0 (the "License");
+    # you may not use this file except in compliance with the License.
+    # You may obtain a copy of the License at
+    #
+    #     http://www.apache.org/licenses/LICENSE-2.0
+    #
+    # Unless required by applicable law or agreed to in writing, software
+    # distributed under the License is distributed on an "AS IS" BASIS,
+    # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    # See the License for the specific language governing permissions and
+    # limitations under the License.
+    
+    # DRBD kernel-module-injector requires the kernel sources to be installed.
+
+    kernel_version=$(uname -r)
+
+    # CentOS based distros
+    if grep -q '\(ID\|ID_LIKE\)=.*\(centos\|rhel\|fedora\)' /etc/os-release; then
+      yum install "kernel-devel-uname-r == $(uname -r)" -y
+      exit 0
+    fi
+
+    # Unsupported distros
+    if ! grep -q '\(ID\|ID_LIKE\)=.*\(ubuntu\|debian\)' /etc/os-release; then
+      exit 0
+    fi
+
+    # Debian based distros
+    kernel_variant=$(
+      apt-cache rdepends \
+        --no-suggests \
+        --no-conflicts \
+        --no-breaks \
+        --no-replaces \
+        --no-enhances \
+        --installed \
+        --recurse \
+        "linux-image-$kernel_version" | \
+        grep -v "linux-image-$kernel_version" | \
+        sed -n 's/.*linux-image-\(.\+\)/\1/p' | sort -u
+    )
+
+    if [ -n "$kernel_variant" ]; then
+      bb-apt-install "kernel-headers-${kernel_variant}"
+    else
+      bb-apt-install "kernel-headers-${kernel_version}"
+    fi
+
+    echo "${kernel_version%.*}"

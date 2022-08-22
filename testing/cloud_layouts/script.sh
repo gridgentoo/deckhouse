@@ -14,6 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+OLD_DEV_BRANCH=main
+
 usage=$(cat <<EOF
 Usage:
   ./script.sh [command]
@@ -431,6 +433,24 @@ ENDSSH
   if [[ $provisioning_failed == "true" ]] ; then
     return 1
   fi
+}
+
+# change_deckhouse_image changes deckhouse container image.
+#
+# Arguments:
+#  - ssh_private_key_path
+#  - ssh_user
+#  - master_ip
+#  - branch
+function change_deckhouse_image() {
+  if ssh -o GlobalKnownHostsFile=/dev/null -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i "$ssh_private_key_path" "$ssh_user@$master_ip" sudo -i /bin/bash <<ENDSSH; then
+set -Eeuo pipefail
+kubectl -n d8-system set image deployment/deckhouse deckhouse=dev-registry.deckhouse.io/sys/deckhouse-oss:${DEV_BRANCH}
+ENDSSH
+    return 0
+  fi
+   >&2 echo "Cannot change deckhouse image to ${DEV_BRANCH}."
+   return 1
 }
 
 # wait_cluster_ready constantly checks if cluster components become ready.

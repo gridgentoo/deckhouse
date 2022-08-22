@@ -34,50 +34,6 @@ spec:
     http:
       paths:
       - path: /
-        pathType: ImplementationSpecific
-        backend:
-          service:
-            name: webui
-            port:
-              name: http
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: upmeter-api
-  namespace: d8-{{ .Chart.Name }}
-  {{- include "helm_lib_module_labels" (list . (dict "app" "webui")) | nindent 2 }}
-  annotations:
-{{- if and (ne (include "helm_lib_module_https_mode" .) "Disabled") .Values.delivery.auth.webui.externalAuthentication }}
-    nginx.ingress.kubernetes.io/auth-signin: {{ .Values.delivery.auth.webui.externalAuthentication.authSignInURL }}
-    nginx.ingress.kubernetes.io/auth-url: {{ .Values.delivery.auth.webui.externalAuthentication.authURL }}
-{{- else }}
-    nginx.ingress.kubernetes.io/auth-type: basic
-    nginx.ingress.kubernetes.io/auth-realm: "Authentication Required"
-    nginx.ingress.kubernetes.io/auth-secret: basic-auth-webui
-{{- end }}
-{{- if .Values.delivery.auth.webui.whitelistSourceRanges }}
-    nginx.ingress.kubernetes.io/whitelist-source-range: {{ .Values.delivery.auth.webui.whitelistSourceRanges | join "," }}
-{{- end }}
-    nginx.ingress.kubernetes.io/backend-protocol: HTTPS
-    nginx.ingress.kubernetes.io/configuration-snippet: |
-      proxy_ssl_certificate /etc/nginx/ssl/client.crt;
-      proxy_ssl_certificate_key /etc/nginx/ssl/client.key;
-      proxy_ssl_protocols TLSv1.2;
-      proxy_ssl_session_reuse on;
-spec:
-  ingressClassName: {{ include "helm_lib_module_ingress_class" . | quote }}
-  {{- if (include "helm_lib_module_https_ingress_tls_enabled" .) }}
-  tls:
-  - hosts:
-    - {{ include "helm_lib_module_public_domain" (list . "argocd") }}
-    secretName: {{ include "helm_lib_module_https_secret_name" (list . "ingress-tls-webui") }}
-  {{- end }}
-  rules:
-  - host: {{ include "helm_lib_module_public_domain" (list . "argocd") }}
-    http:
-      paths:
-      - path: /
         pathType: Prefix
         backend:
           service:

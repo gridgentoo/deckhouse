@@ -1,0 +1,29 @@
+candi:
+  features:
+    - summary: >-
+        Set `maxAllowed` and `minAllowed` to all VPA objects. Set resources requests for all
+        controllers if VPA is off.   Added `global.modules.resourcesRequests.controlPlane` values.
+        `global.modules.resourcesRequests.EveryNode` and
+        `global.modules.resourcesRequests.masterNode` values are deprecated.
+      pull_request: https://github.com/deckhouse/deckhouse/pull/1918
+      impact: All of the controllers will be restarted.
+docs:
+  fixes:
+    - summary: Minor fix of markup in the GCP getting started steps.
+      pull_request: https://github.com/deckhouse/deckhouse/pull/2274
+ingress-nginx:
+  features:
+    - summary: Change default ingress nginx controller version to 1.1
+      pull_request: https://github.com/deckhouse/deckhouse/pull/2267
+      impact: >-
+        All ingress nginx controllers with not-specified version (0.33) will restart and upgrade to
+        1.1
+log-shipper:
+  features:
+    - summary: Refactor transforms composition, improve efficiency and fix destination transforms.
+      pull_request: https://github.com/deckhouse/deckhouse/pull/2050
+node-manager:
+  fixes:
+    - summary: Change cluster autoscaler timeouts to avoid node flapping
+      pull_request: https://github.com/deckhouse/deckhouse/pull/2279
+

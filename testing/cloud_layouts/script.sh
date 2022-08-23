@@ -449,8 +449,29 @@ kubectl -n d8-system set image deployment/deckhouse deckhouse=dev-registry.deckh
 ENDSSH
     return 0
   fi
-   >&2 echo "Cannot change deckhouse image to ${DEV_BRANCH}."
-   return 1
+    >&2 echo "Cannot change deckhouse image to ${DEV_BRANCH}."
+    return 1
+
+  testScript=$(cat <<"END_SCRIPT"
+set -Eeuo pipefail
+[[ "$(kubectl -n d8-system get pods -l app=deckhouse -o 'jsonpath={..status.conditions[?(@.type=="Ready")].status}')" ==  "True" ]]
+END_SCRIPT
+)
+
+  testRunAttempts=5
+  for ((i=1; i<=$testRunAttempts; i++)); do
+    if ssh -o GlobalKnownHostsFile=/dev/null -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i "$ssh_private_key_path" "$ssh_user@$master_ip" sudo -i /bin/bash <<<"${testScript}"; then
+      test_failed=""
+      break
+    else
+      test_failed="true"
+      >&2 echo "Check Deckhouse pod readiness via SSH: attempt $i/$testRunAttempts failed. Sleeping 30 seconds..."
+      sleep 30
+    fi
+  done
+  if [[ $test_failed == "true" ]] ; then
+    return 1
+  fi
 }
 
 # wait_cluster_ready constantly checks if cluster components become ready.
